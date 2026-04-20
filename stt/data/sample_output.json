@@ -1,0 +1,59 @@
+{
+  "description": "Expected output event sequence for sample_input.wav transcription",
+  "audio_info": {
+    "file": "sample_input.wav",
+    "format": "pcm16",
+    "sample_rate": 24000,
+    "channels": 1
+  },
+  "session_config": {
+    "input_audio_format": "pcm16",
+    "input_audio_sample_rate": 24000,
+    "input_audio_number_of_channels": 1,
+    "input_audio_transcription": {
+      "language": "ja",
+      "target_language": "ja"
+    },
+    "turn_detection": false
+  },
+  "events": [
+    {
+      "type": "transcription_session.created",
+      "event_id": "sess_abc123-tc-1234567890"
+    },
+    {
+      "type": "transcription_session.updated",
+      "event_id": "sess_abc123-tu-1234567891",
+      "session": {
+        "object": "realtime.transcription_session",
+        "input_audio_format": "pcm16",
+        "input_audio_sample_rate": 24000,
+        "input_audio_number_of_channels": 1,
+        "input_audio_transcription": {
+          "language": "ja",
+          "target_language": "ja"
+        },
+        "turn_detection": false
+      }
+    },
+    {
+      "type": "conversation.item.created",
+      "event_id": "sess_abc123-cc-1234567892"
+    },
+    {
+      "type": "conversation.item.input_audio_transcription.delta",
+      "item_id": "chunk_0000001",
+      "delta": "こんにちは"
+    },
+    {
+      "type": "conversation.item.input_audio_transcription.delta",
+      "item_id": "chunk_0000002",
+      "delta": "。"
+    },
+    {
+      "type": "input_audio_buffer.committed",
+      "event_id": "sess_abc123-ic-1234567899"
+    }
+  ],
+  "full_transcript": "こんにちは、世界"
+}

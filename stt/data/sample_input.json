@@ -1,0 +1,59 @@
+{
+  "description": "Input event sequence for Kotoba STT bidirectional streaming",
+  "protocol": "SageMaker Bidirectional Streaming (HTTP/2)",
+  "endpoint_path": "/invocations-bidirectional-stream",
+  "events": [
+    {
+      "_comment": "Step 1: Configure session after receiving transcription_session.created",
+      "type": "transcription_session.update",
+      "session": {
+        "input_audio_format": "pcm16",
+        "input_audio_sample_rate": 24000,
+        "input_audio_number_of_channels": 1,
+        "input_audio_transcription": {
+          "language": "ja",
+          "target_language": "ja"
+        },
+        "turn_detection": false
+      }
+    },
+    {
+      "_comment": "Step 2: Send audio chunks (80ms recommended, max 8 seconds per event)",
+      "event_id": "chunk_0000001",
+      "type": "input_audio_buffer.append",
+      "audio": "BASE64_ENCODED_PCM16_AUDIO_BYTES"
+    },
+    {
+      "_comment": "Step 2 (continued): Send more audio chunks",
+      "event_id": "chunk_0000002",
+      "type": "input_audio_buffer.append",
+      "audio": "BASE64_ENCODED_PCM16_AUDIO_BYTES"
+    },
+    {
+      "_comment": "Step 3: Signal end of audio stream",
+      "type": "input_audio_buffer.commit"
+    }
+  ],
+  "audio_format_specs": {
+    "pcm16": {
+      "description": "16-bit signed integer PCM",
+      "encoding": "little-endian",
+      "sample_rate": 24000,
+      "channels": 1,
+      "bytes_per_sample": 2
+    },
+    "float32": {
+      "description": "32-bit floating point",
+      "encoding": "little-endian",
+      "sample_rate": 24000,
+      "channels": 1,
+      "bytes_per_sample": 4,
+      "range": [-1.0, 1.0]
+    }
+  },
+  "limits": {
+    "max_audio_per_event_seconds": 8,
+    "recommended_chunk_ms": 80,
+    "recommended_sample_rate": 24000
+  }
+}
