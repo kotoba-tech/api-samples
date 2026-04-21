@@ -1,0 +1,80 @@
+{
+  "description": "Expected output event sequence when synthesizing 'こんにちは、世界。'",
+  "session_config": {
+    "language": "ja",
+    "speaker_id": "default"
+  },
+  "output_audio": {
+    "format": "pcm_f32",
+    "sample_rate": 24000,
+    "channels": 1,
+    "encoding": "little-endian"
+  },
+  "events": [
+    {
+      "_comment": "Sent first by the server immediately after ws.accept, before any client event.",
+      "type": "session.created",
+      "format": "pcm_f32",
+      "sample_rate": 24000,
+      "channels": 1,
+      "language": "ja",
+      "speaker_id": "default",
+      "client_id": "sess_abc123"
+    },
+    {
+      "_comment": "Emitted in response to response.create.",
+      "type": "response.created"
+    },
+    {
+      "_comment": "Streaming audio deltas. `audio` is base64-encoded pcm_f32.",
+      "type": "audio.chunk",
+      "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
+      "isFinal": false
+    },
+    {
+      "type": "audio.chunk",
+      "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
+      "isFinal": false
+    },
+    {
+      "_comment": "Final audio chunk; emitted after input_text_buffer.commit has been processed.",
+      "type": "audio.chunk",
+      "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
+      "isFinal": true
+    },
+    {
+      "_comment": "End of this synthesis turn. The session stays open; a new response.create may follow.",
+      "type": "response.done",
+      "response": {
+        "status": "completed"
+      }
+    }
+  ],
+  "alt_terminal_events": {
+    "cancelled": {
+      "type": "response.done",
+      "response": {
+        "status": "cancelled"
+      }
+    },
+    "failed": {
+      "type": "response.done",
+      "response": {
+        "status": "failed",
+        "error": {
+          "code": "unknown_speaker_id",
+          "message": "unknown speaker_id: default"
+        }
+      }
+    },
+    "worker_timeout": {
+      "type": "timeout",
+      "message": "worker result timeout"
+    },
+    "fatal_error": {
+      "type": "error",
+      "message": "unsupported_language",
+      "code": "unsupported_language"
+    }
+  }
+}
