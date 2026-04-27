@@ -4,7 +4,7 @@
   "endpoint_path": "/invocations-bidirectional-stream",
   "events": [
     {
-      "_comment": "Step 1: Configure session (must be the first client message, sent within WS_OPEN_TIMEOUT = 10s)",
+      "_comment": "Step 1: Configure session (must be the first client message, sent within WS_OPEN_TIMEOUT = 10s). Currently only speaker_id='default' is supported.",
       "type": "open",
       "language": "ja",
       "speaker_id": "default"

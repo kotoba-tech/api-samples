@@ -20,20 +20,19 @@ Contains the event sequence that clients send to the TTS service:
 
 ### Session Parameters
 
-| Parameter    | Required | Default   | Description                                                      |
-| ------------ | -------- | --------- | ---------------------------------------------------------------- |
-| `language`   | No       | `ja`      | ISO-639-1 language code. Must be in the server's supported list. |
-| `speaker_id` | No       | `default` | Preset voice identifier (`default` is currently supported).      |
+| Parameter    | Required | Default   | Description                                                                              |
+| ------------ | -------- | --------- | ---------------------------------------------------------------------------------------- |
+| `language`   | No       | `ja`      | ISO-639-1 language code. Must be in the server's supported list (`SUPPORTED_LANGUAGES`). |
+| `speaker_id` | No       | `default` | Preset voice identifier. Currently only `default` is supported.                          |
 
 ### Output Audio Format
+
+The server emits a single hardcoded audio format. Audio chunks are returned as
+**base64-encoded bytes** in the `audio.chunk.audio` field.
 
 | Format    | Sample Rate | Channels | Encoding              |
 | --------- | ----------- | -------- | --------------------- |
 | `pcm_f32` | 24000 Hz    | 1 (mono) | Little-endian float32 |
-| `pcm16`   | 24000 Hz    | 1 (mono) | Little-endian int16   |
-| `float32` | 24000 Hz    | 1 (mono) | Little-endian float32 |
-
-Audio chunks are returned as **base64-encoded bytes** in the `audio.chunk.audio` field.
 
 ### Limits
 
@@ -45,7 +44,7 @@ Audio chunks are returned as **base64-encoded bytes** in the `audio.chunk.audio`
 
 Contains the event sequence that the server sends back:
 
-1. `session.created` - Session established (server sends first)
+1. `session.created` - Session established (sent in response to the client's `open` event)
 2. `response.created` - Synthesis response started
 3. `audio.chunk` - Audio delta (base64, multiple, `isFinal` flag on last)
 4. `response.done` - Synthesis turn finished (`status`: `completed` / `cancelled` / `failed`)
@@ -57,13 +56,17 @@ Additional non-terminal server events:
 
 ## Protocol Flow
 
+The client must send `open` first; the server replies with `session.created`
+once the language and speaker are validated. If `open` is not sent within
+`WS_OPEN_TIMEOUT` (default 10s), the server closes the connection.
+
 ```
 Client                                    Server
   │                                         │
-  │◄──── session.created ───────────────────│
-  │                                         │
   │──── open ──────────────────────────────►│
   │     (language, speaker_id)              │
+  │                                         │
+  │◄──── session.created ───────────────────│
   │                                         │
   │──── response.create ───────────────────►│
   │◄──── response.created ──────────────────│

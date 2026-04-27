@@ -12,7 +12,7 @@
   },
   "events": [
     {
-      "_comment": "Sent first by the server immediately after ws.accept, before any client event.",
+      "_comment": "Sent by the server in response to the client's open event (after language and speaker_id are validated).",
       "type": "session.created",
       "format": "pcm_f32",
       "sample_rate": 24000,
@@ -63,7 +63,7 @@
         "status": "failed",
         "error": {
           "code": "unknown_speaker_id",
-          "message": "unknown speaker_id: default"
+          "message": "unknown speaker_id: does-not-exist"
         }
       }
     },
