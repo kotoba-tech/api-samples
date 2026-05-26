@@ -1,5 +1,5 @@
 {
-  "description": "Expected output event sequence for Kotoba TTS v1.0 (promptless, one-shot) when synthesizing 'こんにちは、世界。今日もよろしくお願いします。' with response_id='resp_001'",
+  "description": "Expected output event sequence when synthesizing 'こんにちは、世界。'",
   "session_config": {
     "language": "ja",
     "speaker_id": "default"
@@ -12,7 +12,7 @@
   },
   "events": [
     {
-      "_comment": "Sent by the server in response to the client's open event (after language and speaker_id are validated). `client_id` is the server-assigned session identifier.",
+      "_comment": "Sent by the server in response to the client's open event (after language and speaker_id are validated).",
       "type": "session.created",
       "format": "pcm_f32",
       "sample_rate": 24000,
@@ -22,29 +22,23 @@
       "client_id": "sess_abc123"
     },
     {
-      "_comment": "Emitted in response to response.create. `response.id` is the id supplied by the client, or a server-generated UUID if it was omitted. The same id appears on every subsequent audio.chunk and on response.done.",
-      "type": "response.created",
-      "response": {
-        "id": "resp_001"
-      }
+      "_comment": "Emitted in response to response.create.",
+      "type": "response.created"
     },
     {
-      "_comment": "Streaming audio deltas. `audio` is base64-encoded pcm_f32 (little-endian float32). `response_id` lets the client correlate chunks back to the originating response.create.",
+      "_comment": "Streaming audio deltas. `audio` is base64-encoded pcm_f32.",
       "type": "audio.chunk",
-      "response_id": "resp_001",
       "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
       "isFinal": false
     },
     {
       "type": "audio.chunk",
-      "response_id": "resp_001",
       "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
       "isFinal": false
     },
     {
-      "_comment": "Final audio chunk for this response.",
+      "_comment": "Final audio chunk; emitted after input_text_buffer.commit has been processed.",
       "type": "audio.chunk",
-      "response_id": "resp_001",
       "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
       "isFinal": true
     },
@@ -52,7 +46,6 @@
       "_comment": "End of this synthesis turn. The session stays open; a new response.create may follow.",
       "type": "response.done",
       "response": {
-        "id": "resp_001",
         "status": "completed"
       }
     }
@@ -61,14 +54,12 @@
     "cancelled": {
       "type": "response.done",
       "response": {
-        "id": "resp_001",
         "status": "cancelled"
       }
     },
-    "failed_unknown_speaker": {
+    "failed": {
       "type": "response.done",
       "response": {
-        "id": "resp_001",
         "status": "failed",
         "error": {
           "code": "unknown_speaker_id",
@@ -77,7 +68,6 @@
       }
     },
     "worker_timeout": {
-      "_comment": "Non-fatal notification that the server did not produce audio within WS_RESULT_TIMEOUT. The session stays open and synthesis may be retried. After WS_RESULT_TIMEOUT_LIMIT (default 3) consecutive timeouts the server emits a fatal `error` and closes the connection. The `message` field is the literal string the server sends.",
       "type": "timeout",
       "message": "worker result timeout"
     },

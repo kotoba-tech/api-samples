@@ -1,36 +1,35 @@
 {
-  "description": "Input event sequence for Kotoba TTS bidirectional streaming",
+  "description": "Input event sequence for Kotoba TTS v1.0 (promptless, one-shot) bidirectional streaming",
   "protocol": "SageMaker Bidirectional Streaming (HTTP/2)",
   "endpoint_path": "/invocations-bidirectional-stream",
   "events": [
     {
-      "_comment": "Step 1: Configure session (must be the first client message, sent within WS_OPEN_TIMEOUT = 10s). Currently only speaker_id='default' is supported.",
+      "_comment": "Step 1: Configure session (must be the first client message, sent within WS_OPEN_TIMEOUT = 10s). `speaker_id` selects one of the available voice presets (see session_config.speaker_id_examples below). `default` is always available.",
       "type": "open",
       "language": "ja",
       "speaker_id": "default"
     },
     {
-      "_comment": "Step 2: Start a synthesis response (can be repeated after each response.done to reuse the session)",
-      "type": "response.create"
-    },
-    {
-      "_comment": "Step 3: Stream text chunks",
-      "type": "input_text_buffer.append",
-      "text": "こんにちは、"
-    },
-    {
-      "_comment": "Step 3 (continued): more text chunks",
-      "type": "input_text_buffer.append",
-      "text": "世界。"
-    },
-    {
-      "_comment": "Step 4: Signal end of text input; the server will emit a final audio.chunk (isFinal=true) and response.done",
-      "type": "input_text_buffer.commit"
+      "_comment": "Step 2: Submit a synthesis turn. v1.0 is one-shot: the full `text` is sent inside `response.create`. There is no input_text_buffer.append / input_text_buffer.commit. `response_id` is optional (server generates a UUID when omitted) and is echoed on every response-scoped server event.",
+      "type": "response.create",
+      "text": "こんにちは、世界。今日もよろしくお願いします。",
+      "response_id": "resp_001"
     }
   ],
   "session_config": {
     "language_iso_639_1": ["ja"],
-    "speaker_id_examples": ["default"]
+    "speaker_id_examples": ["default", "man-1", "woman-1"],
+    "_speaker_id_note": "`default` is always available; additional preset keys depend on the bundle. Unknown ids fail with response.done {status: failed, error.code: unknown_speaker_id}."
+  },
+  "response_create_fields": {
+    "text": "Required, non-empty string. The full text to synthesize.",
+    "response_id": "Optional string. Echoed back on response.created / audio.chunk / response.done. Defaults to a server-generated UUID."
+  },
+  "alt_client_events": {
+    "cancel": {
+      "_comment": "Send to cancel the currently active response. The server replies with response.done (status=cancelled) within WS_CANCEL_GRACE_TIMEOUT.",
+      "type": "response.cancel"
+    }
   },
   "output_audio_format_specs": {
     "format": "pcm_f32",
