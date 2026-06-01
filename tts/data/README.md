@@ -61,7 +61,7 @@ Contains the event sequence that the server sends back:
 1. `session.created` — Session established (sent in response to the client's `open`)
 2. `response.created` — Synthesis response started (carries `response.id`)
 3. `audio.chunk` — Audio delta (base64, multiple; each carries `response_id` and an `isFinal` flag)
-4. `response.done` — Synthesis turn finished (`status`: `completed` / `cancelled` / `failed`; carries `response.id`)
+4. `response.done` — Synthesis turn finished (`status`: `completed` / `cancelled` / `failed`; carries `response.id`; carries a `usage` token-count object whenever tokens were consumed)
 
 Additional non-terminal server events:
 
@@ -74,6 +74,13 @@ v1.0 propagates `response.id` (or `response_id` on `audio.chunk`) so that
 clients can correlate streamed audio back to the originating `response.create`.
 The id is either the client-supplied `response.create.response_id` or a
 server-generated UUID when the client omits it.
+
+### Token usage
+
+`response.done` includes a `usage` object: `input_tokens` (input text),
+`output_tokens` (generated audio), and `total_tokens`. On `cancelled` or
+`failed` turns the counts reflect what was consumed, and `usage` is omitted when
+nothing was consumed.
 
 ## Protocol Flow
 

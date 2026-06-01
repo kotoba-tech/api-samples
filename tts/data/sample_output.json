@@ -53,19 +53,31 @@
       "type": "response.done",
       "response": {
         "id": "resp_001",
-        "status": "completed"
+        "status": "completed",
+        "usage": {
+          "input_tokens": 18,
+          "output_tokens": 48,
+          "total_tokens": 66
+        }
       }
     }
   ],
   "alt_terminal_events": {
     "cancelled": {
+      "_comment": "`usage` reflects tokens consumed before cancellation (partial); omitted entirely if nothing was consumed.",
       "type": "response.done",
       "response": {
         "id": "resp_001",
-        "status": "cancelled"
+        "status": "cancelled",
+        "usage": {
+          "input_tokens": 18,
+          "output_tokens": 20,
+          "total_tokens": 38
+        }
       }
     },
     "failed_unknown_speaker": {
+      "_comment": "No `usage`: this failure occurs before any audio is produced, so nothing was consumed. A failure mid-synthesis carries partial `usage`.",
       "type": "response.done",
       "response": {
         "id": "resp_001",
