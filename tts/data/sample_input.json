@@ -4,10 +4,12 @@
   "endpoint_path": "/invocations-bidirectional-stream",
   "events": [
     {
-      "_comment": "Step 1: Configure session (must be the first client message, sent within WS_OPEN_TIMEOUT = 10s). `speaker_id` selects one of the available voice presets (see session_config.speaker_id_examples below). `default` is always available.",
+      "_comment": "Step 1: Configure session (must be the first client message, sent within WS_OPEN_TIMEOUT = 10s). `speaker_id` selects one of the available voice presets (see session_config.speaker_id_examples below). `default` is always available. `format` and `sample_rate` are optional and select the output audio encoding (see output_audio_format_specs below); both default to pcm_f32 @ 24000 Hz. The negotiated values are echoed on session.created.",
       "type": "open",
       "language": "ja",
-      "speaker_id": "default"
+      "speaker_id": "default",
+      "format": "pcm_f32",
+      "sample_rate": 24000
     },
     {
       "_comment": "Step 2: Submit a synthesis turn. v1.0 is one-shot: the full `text` is sent inside `response.create`. There is no input_text_buffer.append / input_text_buffer.commit. `response_id` is optional (server generates a UUID when omitted) and is echoed on every response-scoped server event.",
@@ -33,9 +35,12 @@
   },
   "output_audio_format_specs": {
     "format": "pcm_f32",
+    "format_options": ["pcm_f32", "pcm_16", "mulaw", "opus"],
     "sample_rate": 24000,
+    "sample_rate_options": [8000, 16000, 24000],
     "channels": 1,
-    "transport": "Base64-encoded little-endian bytes carried in audio.chunk.audio"
+    "transport": "Base64-encoded bytes carried in audio.chunk.audio",
+    "_format_note": "Optional `format`/`sample_rate` on the open event select the output encoding (default pcm_f32 @ 24000 Hz). PCM formats (pcm_f32, pcm_16) accept any sample_rate_options value. mulaw is always 8000 Hz and opus is always 24000 Hz; a requested sample_rate is ignored for those. An unsupported format or sample_rate fails the open with an error and closes the connection."
   },
   "limits": {
     "ws_open_timeout_seconds": 10,
