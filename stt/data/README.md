@@ -21,8 +21,10 @@ Contains the event sequence that clients send to the STT service:
 
 | Format    | Sample Rate | Channels | Encoding              |
 | --------- | ----------- | -------- | --------------------- |
-| `pcm16`   | 24000 Hz    | 1 (mono) | Little-endian int16   |
-| `float32` | 24000 Hz    | 1 (mono) | Little-endian float32 |
+| `pcm16`   |             | 1 (mono) | Little-endian int16   |
+| `float32` |             | 1 (mono) | Little-endian float32 |
+| `mulaw`   | 8000 Hz     | 1 (mono) | G.711 μ-law           |
+| `opus`    | 24000/48000 | 1 (mono) | Ogg/Opus per append   |
 
 ### Limits
 

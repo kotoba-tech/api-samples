@@ -49,6 +49,19 @@
       "channels": 1,
       "bytes_per_sample": 4,
       "range": [-1.0, 1.0]
+    },
+    "mulaw": {
+      "description": "G.711 μ-law (alias of twilio)",
+      "encoding": "G.711 μ-law",
+      "sample_rate": 8000,
+      "channels": 1,
+      "bytes_per_sample": 1
+    },
+    "opus": {
+      "description": "Self-contained Ogg/Opus blob per append event",
+      "encoding": "Ogg/Opus",
+      "sample_rate": [24000, 48000],
+      "channels": 1
     }
   },
   "limits": {
