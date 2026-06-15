@@ -17,6 +17,9 @@ Contains the event sequence that clients send to the STT service:
 2. `input_audio_buffer.append` - Send audio chunks (base64 encoded)
 3. `input_audio_buffer.commit` - Signal end of audio
 
+Set `input_audio_transcription.kana` to `true` to transcribe person names in katakana.
+Set `input_audio_transcription.keywords` to bias recognition toward the listed terms.
+
 ### Audio Format Specifications
 
 | Format    | Sample Rate | Channels | Encoding              |

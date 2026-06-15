@@ -12,7 +12,9 @@
         "input_audio_number_of_channels": 1,
         "input_audio_transcription": {
           "language": "ja",
-          "target_language": "ja"
+          "target_language": "ja",
+          "keywords": [],
+          "kana": false
         },
         "turn_detection": false
       }
