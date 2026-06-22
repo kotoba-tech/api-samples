@@ -59,5 +59,14 @@
       "event_id": "sess_abc123-ic-1234567899"
     }
   ],
-  "full_transcript": "こんにちは、世界"
+  "full_transcript": "こんにちは、世界",
+  "server_vad_events": {
+    "_comment": "Only when session.turn_detection is a server_vad config object. The server emits one conversation.item.input_audio_transcription.completed per detected turn, right after that turn's last delta.",
+    "example": {
+      "type": "conversation.item.input_audio_transcription.completed",
+      "item_id": "chunk_0000001",
+      "transcript": "こんにちは"
+    },
+    "_notes": "item_id echoes the turn's append event_id (null when none was sent). Turn sensitivity is controlled by session.turn_detection.silence_duration_ms (default 400 ms), which should be tuned for your application and downstream pipeline."
+  }
 }

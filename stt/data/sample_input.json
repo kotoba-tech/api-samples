@@ -16,7 +16,10 @@
           "keywords": [],
           "kana": false
         },
-        "turn_detection": false
+        "turn_detection": {
+          "type": "server_vad",
+          "silence_duration_ms": 400
+        }
       }
     },
     {
@@ -70,5 +73,14 @@
     "max_audio_per_event_seconds": 8,
     "recommended_chunk_ms": 80,
     "recommended_sample_rate": 24000
+  },
+  "turn_detection_options": {
+    "_comment": "session.turn_detection accepts either false or a server VAD config object",
+    "disabled": false,
+    "server_vad": {
+      "type": "server_vad",
+      "silence_duration_ms": 400
+    },
+    "_notes": "With false there is no automatic turn detection — concatenate delta events and use input_audio_buffer.committed as the done signal. With server_vad the server emits a conversation.item.input_audio_transcription.completed event at each detected turn boundary. silence_duration_ms is the trailing silence (ms) that ends a turn; it defaults to 400 but should be tuned for your application and downstream pipeline."
   }
 }
