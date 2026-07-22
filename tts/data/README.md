@@ -1,6 +1,6 @@
 # TTS Sample Data
 
-This directory contains sample input and output files for the Kotoba TTS v1.0 bidirectional streaming service.
+This directory contains sample input and output files for the Kotoba TTS v1.6 bidirectional streaming service.
 
 ## Files
 
@@ -36,9 +36,60 @@ closes the connection.
 | ------------- | -------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `text`        | **Yes**  | —               | The full text to synthesize. Must be a non-empty string. Sent inside `response.create` — v1.0 does not stream text chunks.                                                                                                                         |
 | `response_id` | No       | server-gen UUID | Client-supplied id. Echoed on `response.queued` / `response.created` / every `audio.chunk` / `response.done` for correlation. Must be unique among outstanding (active or queued) responses; reusable once its `response.done` has been delivered. |
+| `with_timestamps`  | No       | `false`         | Set to `true` to receive incremental `alignments` records on audio chunks.                                                                                                                  |
 
 You may submit several `response.create` events without **waiting for each
 `response.done`** — see *Pipelining* below.
+
+### Timestamps and heard-prefix tracking
+
+When `response.create.with_timestamps` is `true`, an `audio.chunk` includes an
+`alignments` field whenever one or more timestamp records have been newly
+finalized:
+
+```json
+{
+  "type": "audio.chunk",
+  "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
+  "isFinal": false,
+  "response_id": "resp_001",
+  "alignments": [{"start": 0.00, "end": 0.25, "text": "こん"}]
+}
+```
+
+Each record has the following shape:
+
+| Field   | Type   | Description |
+| ------- | ------ | ----------- |
+| `start` | number | Start time in seconds from the beginning of this response's output audio. |
+| `end`   | number | End time in seconds from the beginning of this response's output audio. |
+| `text`  | string | Exact slice of the raw `text` sent in this `response.create`. |
+
+Records are monotone and non-overlapping. Each incremental record is delivered
+exactly once, and chunks with no newly finalized records omit `alignments`
+entirely. Records normally have roughly token granularity (for example, one
+Japanese character or a small multi-character token). Fast speech can finalize
+two or more records on one chunk, and a skipped-over token can be represented by
+a zero-length record (`start == end`).
+
+The records cover the whole response: once the final `audio.chunk`
+(`isFinal: true`) has arrived, the records received across all chunks
+concatenate to the full request `text`.
+
+For barge-in or partial-transcript UI, track the index *n* of the `audio.chunk`
+currently audible on the speaker, then concatenate `alignments[].text` from
+audio chunks `0..n`. That string is what the listener has actually heard. The
+recipe works both while audio is being generated and after generation has
+completed, with every output format including `opus`; no sample-rate arithmetic
+is needed. `response.cancel` is unchanged and only stops generation, so the
+client must still use its playback position to choose *n*.
+
+Timestamps are intentionally conservative: a record is emitted only after the
+alignment has confirmed that the following text is being spoken. The stream
+therefore never over-reports progress, but records typically arrive a few
+hundred milliseconds behind the corresponding audio. If a deployment does not
+support timestamps, a request with `with_timestamps: true` receives the non-fatal,
+response-scoped `timestamps_unavailable` error; the session remains usable.
 
 ### Pipelining (queueing multiple responses)
 
@@ -143,13 +194,13 @@ Contains the event sequence that the server sends back:
 1. `session.created` — Session established (sent in response to the client's `open`)
 2. `response.queued` — A `response.create` was accepted but cannot start yet because another response is active; carries `response.id`. It will later emit `response.created`. Only appears when pipelining (see *Pipelining*).
 3. `response.created` — Synthesis response started (carries `response.id`)
-4. `audio.chunk` — Audio delta (base64, multiple; each carries `response_id` and an `isFinal` flag)
+4. `audio.chunk` — Audio delta (base64, multiple; each carries `response_id` and an `isFinal` flag). With timestamps enabled, chunks carrying newly finalized records also have `alignments`.
 5. `response.done` — Synthesis turn finished (`status`: `completed` / `cancelled` / `failed`; carries `response.id`; carries a `usage` token-count object whenever tokens were consumed)
 
 Additional server events:
 
 - `timeout` — Result timeout notification: the server produced no audio in time (non-fatal; session still alive)
-- `error` — Error notification. Carries **`fatal`** (`true` ⇒ the server is closing the connection, reconnect; `false` ⇒ the session continues, keep going) and, for errors tied to a specific `response.create` / `response.cancel`, the **`response_id`** it concerns (the client-supplied id, or `null` when none was provided). Errors with no `response_id` are session-scoped (e.g. malformed `open`, unsupported language); response-scoped non-fatal errors (empty text, duplicate id, queue full, unknown cancel target) let you retry on the same connection.
+- `error` — Error notification. Carries **`fatal`** (`true` ⇒ the server is closing the connection, reconnect; `false` ⇒ the session continues, keep going) and, for errors tied to a specific `response.create` / `response.cancel`, the **`response_id`** it concerns (the client-supplied id, or `null` when none was provided). Errors with no `response_id` are session-scoped (e.g. malformed `open`, unsupported language); response-scoped non-fatal errors (empty text, duplicate id, queue full, unknown cancel target, or `timestamps_unavailable` when timestamps are requested from a deployment without timestamp support) let you retry on the same connection.
 
 ### Response-scoped IDs
 
@@ -183,15 +234,17 @@ Client                                    Server
   │      language, speaker_id, client_id)   |
   │                                         │
   │──── response.create ───────────────────►│
-  │     (text, response_id?, max_length?)   │
+  │     (text, response_id?, timestamps?)   │
   │                                         │
   │◄──── response.created ──────────────────│
   │     (response.id)                       │
   │                                         │
   │◄──── audio.chunk (isFinal:false) ───────│
-  │     (response_id, base64 pcm_f32)       │
+  │     (response_id, base64 audio,          │
+  │      alignments? when enabled)           │
   │              ...                        │
   │◄──── audio.chunk (isFinal:true) ────────│
+  │     (timestamps when enabled)            │
   │                                         │
   │◄──── response.done ─────────────────────│
   │     (response.id, status: completed)    │

@@ -1,5 +1,5 @@
 {
-  "description": "Input event sequence for Kotoba TTS v1.0 (promptless, one-shot) bidirectional streaming",
+  "description": "Input event sequence for Kotoba TTS v1.6 (promptless, one-shot) bidirectional streaming",
   "protocol": "SageMaker Bidirectional Streaming (HTTP/2)",
   "endpoint_path": "/invocations-bidirectional-stream",
   "events": [
@@ -12,10 +12,11 @@
       "sample_rate": 24000
     },
     {
-      "_comment": "Step 2: Submit a synthesis turn. v1.0 is one-shot: the full `text` is sent inside `response.create`. There is no input_text_buffer.append / input_text_buffer.commit. `response_id` is optional (server generates a UUID when omitted) and is echoed on every response-scoped server event.",
+      "_comment": "Step 2: Submit a synthesis turn. v1.0 is one-shot: the full `text` is sent inside `response.create`. There is no input_text_buffer.append / input_text_buffer.commit. `response_id` is optional (server generates a UUID when omitted) and is echoed on every response-scoped server event. `with_timestamps` is optional and defaults to false; true requests incremental audio.chunk.alignments and the complete list on the final audio.chunk.timestamps.",
       "type": "response.create",
       "text": "こんにちは、世界。今日もよろしくお願いします。",
-      "response_id": "resp_001"
+      "response_id": "resp_001",
+      "with_timestamps": true
     }
   ],
   "session_config": {
@@ -25,7 +26,8 @@
   },
   "response_create_fields": {
     "text": "Required, non-empty string. The full text to synthesize.",
-    "response_id": "Optional string. Echoed back on response.created / audio.chunk / response.done. Defaults to a server-generated UUID."
+    "response_id": "Optional string. Echoed back on response.created / audio.chunk / response.done. Defaults to a server-generated UUID.",
+    "with_timestamps": "Optional boolean, default false. When true, audio chunks stream newly finalized alignments and the final chunk includes the complete timestamps list."
   },
   "alt_client_events": {
     "cancel": {
