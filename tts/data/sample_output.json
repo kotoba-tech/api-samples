@@ -1,5 +1,5 @@
 {
-  "description": "Expected output event sequence for Kotoba TTS v1.0 (promptless, one-shot) when synthesizing 'こんにちは、世界。今日もよろしくお願いします。' with response_id='resp_001'",
+  "description": "Expected output event sequence for Kotoba TTS v1.6 (promptless, one-shot) with timestamps enabled when synthesizing 'こんにちは、世界。今日もよろしくお願いします。' with response_id='resp_001'",
   "session_config": {
     "language": "ja",
     "speaker_id": "default"
@@ -29,24 +29,59 @@
       }
     },
     {
-      "_comment": "Streaming audio deltas. `audio` is base64-encoded pcm_f32 (little-endian float32). `response_id` lets the client correlate chunks back to the originating response.create.",
+      "_comment": "Early streaming audio delta. `audio` is base64-encoded pcm_f32 (little-endian float32). `response_id` lets the client correlate chunks back to the originating response.create. No timestamp record has been finalized yet, so this chunk omits `alignments` entirely.",
       "type": "audio.chunk",
       "response_id": "resp_001",
       "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
       "isFinal": false
     },
     {
+      "_comment": "Newly finalized records appear exactly once in `alignments`. Their text concatenates to a prefix of the raw request text.",
       "type": "audio.chunk",
       "response_id": "resp_001",
       "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
-      "isFinal": false
+      "isFinal": false,
+      "alignments": [
+        {"start": 0.00, "end": 0.25, "text": "こん"},
+        {"start": 0.25, "end": 0.50, "text": "にち"}
+      ]
     },
     {
-      "_comment": "Final audio chunk for this response.",
       "type": "audio.chunk",
       "response_id": "resp_001",
       "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
-      "isFinal": true
+      "isFinal": false,
+      "alignments": [
+        {"start": 0.50, "end": 0.65, "text": "は"},
+        {"start": 0.65, "end": 0.75, "text": "、"},
+        {"start": 0.75, "end": 1.10, "text": "世界"},
+        {"start": 1.10, "end": 1.18, "text": "。"}
+      ]
+    },
+    {
+      "type": "audio.chunk",
+      "response_id": "resp_001",
+      "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
+      "isFinal": false,
+      "alignments": [
+        {"start": 1.18, "end": 1.45, "text": "今日"},
+        {"start": 1.45, "end": 1.58, "text": "も"},
+        {"start": 1.58, "end": 1.85, "text": "よろ"},
+        {"start": 1.85, "end": 2.08, "text": "しく"}
+      ]
+    },
+    {
+      "_comment": "The final chunk carries the last newly finalized records in `alignments`; the records received across all chunks concatenate to the full request text.",
+      "type": "audio.chunk",
+      "response_id": "resp_001",
+      "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
+      "isFinal": true,
+      "alignments": [
+        {"start": 2.08, "end": 2.35, "text": "お願"},
+        {"start": 2.35, "end": 2.60, "text": "いし"},
+        {"start": 2.60, "end": 2.90, "text": "ます"},
+        {"start": 2.90, "end": 3.00, "text": "。"}
+      ]
     },
     {
       "_comment": "End of this synthesis turn. The session stays open; a new response.create may follow.",
