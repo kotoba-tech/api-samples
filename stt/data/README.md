@@ -44,6 +44,14 @@ Set `input_audio_transcription.keywords` to bias recognition toward the listed t
 - Recommended chunk size: 80ms
 - Recommended sampling rate: 24kHz
 
+### Server-side Timeouts
+
+| Phase               | Server behavior                                                                                                                                                                                                                                                                                                                                                            |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Session init        | `transcription_session.update` must arrive within **10 s** of connecting. Otherwise the server sends a final `error` event and closes the stream.                                                                                                                                                                                                                          |
+| Established session | **No inactivity or result timeout.** There is no STT equivalent of the TTS `WS_IDLE_TIMEOUT` / `WS_RESULT_TIMEOUT` / `WS_RESULT_TIMEOUT_LIMIT`, and no `timeout` event in the STT protocol. A session that completed init but never receives `input_audio_buffer.append` stays open until the client (or transport) closes it — enforce your own client-side read timeout. |
+| After commit        | The server closes the stream **5 s** after sending `input_audio_buffer.committed` if the client has not closed it first.                                                                                                                                                                                                                                                   |
+
 ## sample_output.json
 
 Contains the event sequence that the server sends back:
