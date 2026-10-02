@@ -1,33 +1,37 @@
 {
-  "description": "Input event sequence for Kotoba TTS v1.6 (promptless, one-shot) bidirectional streaming",
+  "description": "Input event sequence for Kotoba TTS v1.8 (promptless, one-shot) bidirectional streaming",
   "protocol": "SageMaker Bidirectional Streaming (HTTP/2)",
   "endpoint_path": "/invocations-bidirectional-stream",
   "events": [
     {
-      "_comment": "Step 1: Configure session (must be the first client message, sent within WS_OPEN_TIMEOUT = 10s). `speaker_id` selects one of the available voice presets (see session_config.speaker_id_examples below). `default` is always available. `format` and `sample_rate` are optional and select the output audio encoding (see output_audio_format_specs below); both default to pcm_f32 @ 24000 Hz. The negotiated values are echoed on session.created.",
+      "_comment": "Step 1: Configure session (must be the first client message, sent within WS_OPEN_TIMEOUT = 10s). `speaker_id` selects one of the available voice presets (see session_config.speaker_id_examples below). `default` is always available. `format` and `sample_rate` are optional and select the output audio encoding (see output_audio_format_specs below); both default to float32 @ 24000 Hz. The negotiated values are echoed on session.created.",
       "type": "open",
       "language": "ja",
       "speaker_id": "default",
-      "format": "pcm_f32",
+      "format": "float32",
       "sample_rate": 24000
     },
     {
-      "_comment": "Step 2: Submit a synthesis turn. v1.0 is one-shot: the full `text` is sent inside `response.create`. There is no input_text_buffer.append / input_text_buffer.commit. `response_id` is optional (server generates a UUID when omitted) and is echoed on every response-scoped server event. `with_timestamps` is optional and defaults to false; true requests incremental audio.chunk.alignments and the complete list on the final audio.chunk.timestamps.",
+      "_comment": "Step 2: Submit a synthesis turn. v1.0 is one-shot: the full `text` is sent inside `response.create`. There is no input_text_buffer.append / input_text_buffer.commit. `response_id` is optional (server generates a UUID when omitted) and is echoed on every response-scoped server event. `with_timestamps` is optional and defaults to false; true requests incremental audio.chunk.alignments. `voice_settings.speed` is optional (0.7-1.5, default 1.0) and sets the speaking rate without changing the pitch.",
       "type": "response.create",
       "text": "こんにちは、世界。今日もよろしくお願いします。",
       "response_id": "resp_001",
-      "with_timestamps": true
+      "with_timestamps": true,
+      "voice_settings": {
+        "speed": 1.0
+      }
     }
   ],
   "session_config": {
     "language_iso_639_1": ["ja"],
     "speaker_id_examples": ["default", "man-1", "woman-1"],
-    "_speaker_id_note": "`default` is always available; additional preset keys depend on the bundle. Unknown ids fail with response.done {status: failed, error.code: unknown_speaker_id}."
+    "_speaker_id_note": "`default` and `man-1` are the same male voice; `woman-1` is a female voice. Unknown ids fail with response.done {status: failed, error.code: unknown_speaker_id}."
   },
   "response_create_fields": {
     "text": "Required, non-empty string. The full text to synthesize.",
     "response_id": "Optional string. Echoed back on response.created / audio.chunk / response.done. Defaults to a server-generated UUID.",
-    "with_timestamps": "Optional boolean, default false. When true, audio chunks stream newly finalized alignments and the final chunk includes the complete timestamps list."
+    "with_timestamps": "Optional boolean, default false. When true, audio chunks stream newly finalized alignments.",
+    "voice_settings": "Optional object. `speed` is a number from 0.7 to 1.5 (default 1.0); 1.5 is 1.5x faster. An invalid value is rejected with a non-fatal error carrying the response_id."
   },
   "alt_client_events": {
     "cancel": {
@@ -36,13 +40,13 @@
     }
   },
   "output_audio_format_specs": {
-    "format": "pcm_f32",
-    "format_options": ["pcm_f32", "pcm_16", "mulaw", "opus"],
+    "format": "float32",
+    "format_options": ["float32", "pcm16", "mulaw", "opus"],
     "sample_rate": 24000,
     "sample_rate_options": [8000, 16000, 24000],
     "channels": 1,
     "transport": "Base64-encoded bytes carried in audio.chunk.audio",
-    "_format_note": "Optional `format`/`sample_rate` on the open event select the output encoding (default pcm_f32 @ 24000 Hz). PCM formats (pcm_f32, pcm_16) accept any sample_rate_options value. mulaw is always 8000 Hz and opus is always 24000 Hz; a requested sample_rate is ignored for those. An unsupported format or sample_rate fails the open with an error and closes the connection."
+    "_format_note": "Optional `format`/`sample_rate` on the open event select the output encoding (default float32 @ 24000 Hz). PCM formats (float32, pcm16) accept any sample_rate_options value. mulaw is always 8000 Hz and opus is always 24000 Hz; a requested sample_rate is ignored for those. An unsupported format or sample_rate fails the open with an error and closes the connection. The former spellings pcm_f32 and pcm_16 are still accepted as aliases of float32 and pcm16."
   },
   "limits": {
     "ws_open_timeout_seconds": 10,

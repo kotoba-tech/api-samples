@@ -1,11 +1,11 @@
 {
-  "description": "Expected output event sequence for Kotoba TTS v1.6 (promptless, one-shot) with timestamps enabled when synthesizing 'こんにちは、世界。今日もよろしくお願いします。' with response_id='resp_001'",
+  "description": "Expected output event sequence for Kotoba TTS v1.8 (promptless, one-shot) with timestamps enabled when synthesizing 'こんにちは、世界。今日もよろしくお願いします。' with response_id='resp_001'",
   "session_config": {
     "language": "ja",
     "speaker_id": "default"
   },
   "output_audio": {
-    "format": "pcm_f32",
+    "format": "float32",
     "sample_rate": 24000,
     "channels": 1,
     "encoding": "little-endian"
@@ -14,7 +14,7 @@
     {
       "_comment": "Sent by the server in response to the client's open event (after language and speaker_id are validated). `client_id` is the server-assigned session identifier.",
       "type": "session.created",
-      "format": "pcm_f32",
+      "format": "float32",
       "sample_rate": 24000,
       "channels": 1,
       "language": "ja",
@@ -29,17 +29,17 @@
       }
     },
     {
-      "_comment": "Early streaming audio delta. `audio` is base64-encoded pcm_f32 (little-endian float32). `response_id` lets the client correlate chunks back to the originating response.create. No timestamp record has been finalized yet, so this chunk omits `alignments` entirely.",
+      "_comment": "Early streaming audio delta. `audio` is base64-encoded float32 (little-endian). `response_id` lets the client correlate chunks back to the originating response.create. No timestamp record has been finalized yet, so this chunk omits `alignments` entirely.",
       "type": "audio.chunk",
       "response_id": "resp_001",
-      "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
+      "audio": "BASE64_ENCODED_FLOAT32_AUDIO_BYTES",
       "isFinal": false
     },
     {
       "_comment": "Newly finalized records appear exactly once in `alignments`. Their text concatenates to a prefix of the raw request text.",
       "type": "audio.chunk",
       "response_id": "resp_001",
-      "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
+      "audio": "BASE64_ENCODED_FLOAT32_AUDIO_BYTES",
       "isFinal": false,
       "alignments": [
         {"start": 0.00, "end": 0.25, "text": "こん"},
@@ -49,7 +49,7 @@
     {
       "type": "audio.chunk",
       "response_id": "resp_001",
-      "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
+      "audio": "BASE64_ENCODED_FLOAT32_AUDIO_BYTES",
       "isFinal": false,
       "alignments": [
         {"start": 0.50, "end": 0.65, "text": "は"},
@@ -61,7 +61,7 @@
     {
       "type": "audio.chunk",
       "response_id": "resp_001",
-      "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
+      "audio": "BASE64_ENCODED_FLOAT32_AUDIO_BYTES",
       "isFinal": false,
       "alignments": [
         {"start": 1.18, "end": 1.45, "text": "今日"},
@@ -74,7 +74,7 @@
       "_comment": "The final chunk carries the last newly finalized records in `alignments`; the records received across all chunks concatenate to the full request text.",
       "type": "audio.chunk",
       "response_id": "resp_001",
-      "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
+      "audio": "BASE64_ENCODED_FLOAT32_AUDIO_BYTES",
       "isFinal": true,
       "alignments": [
         {"start": 2.08, "end": 2.35, "text": "お願"},
@@ -127,6 +127,13 @@
       "_comment": "Non-fatal notification that the server did not produce audio within WS_RESULT_TIMEOUT. The session stays open and synthesis may be retried. After WS_RESULT_TIMEOUT_LIMIT (default 3) consecutive timeouts the server emits a fatal `error` and closes the connection. The `message` field is the literal string the server sends.",
       "type": "timeout",
       "message": "worker result timeout"
+    },
+    "invalid_voice_settings": {
+      "_comment": "Non-fatal, response-scoped rejection of a response.create whose voice_settings.speed is out of range or not a number. No response.created or response.done follows for this id; the session stays open.",
+      "type": "error",
+      "message": "speed must be between 0.7 and 1.5",
+      "fatal": false,
+      "response_id": "resp_001"
     },
     "fatal_error": {
       "type": "error",

@@ -1,6 +1,6 @@
 # TTS Sample Data
 
-This directory contains sample input and output files for the Kotoba TTS v1.6 bidirectional streaming service.
+This directory contains sample input and output files for the Kotoba TTS v1.8 bidirectional streaming service.
 
 ## Files
 
@@ -21,8 +21,8 @@ Contains the event sequence that clients send to the TTS service:
 | Parameter              | Required | Default   | Description                                                                                                                                      |
 | ---------------------- | -------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `language`             | No       | `ja`      | ISO-639-1 language code. Must be in the server's supported list (`SUPPORTED_LANGUAGES`).                                                         |
-| `speaker_id`           | No       | `default` | Preset voice identifier. `default` is always available; additional preset keys depend on the bundle. Unknown ids fail with `unknown_speaker_id`. |
-| `format`               | No       | `pcm_f32` | Output audio encoding: `pcm_f32`, `pcm_16`, `mulaw`, or `opus` (see *Output Audio Format*).                                                      |
+| `speaker_id`           | No       | `default` | Preset voice: `default` or `man-1` (male; the same voice) or `woman-1` (female). Unknown ids fail with `unknown_speaker_id`.                 |
+| `format`               | No       | `float32` | Output audio encoding: `float32`, `pcm16`, `mulaw`, or `opus` (see *Output Audio Format*).                                                       |
 | `sample_rate`          | No       | `24000`   | Output sample rate (`8000` / `16000` / `24000`). Ignored for `mulaw` (forced 8 kHz) and `opus` (forced 24 kHz).                                  |
 | `spk_ref_audio_tokens` | No       | —         | Optional speaker reference tokens for the requested voice.                                                                                       |
 
@@ -37,9 +37,17 @@ closes the connection.
 | `text`        | **Yes**  | —               | The full text to synthesize. Must be a non-empty string. Sent inside `response.create` — v1.0 does not stream text chunks.                                                                                                                         |
 | `response_id` | No       | server-gen UUID | Client-supplied id. Echoed on `response.queued` / `response.created` / every `audio.chunk` / `response.done` for correlation. Must be unique among outstanding (active or queued) responses; reusable once its `response.done` has been delivered. |
 | `with_timestamps`  | No       | `false`         | Set to `true` to receive incremental `alignments` records on audio chunks.                                                                                                                  |
+| `voice_settings`   | No       | —               | Optional object. `speed` (number, `0.7`–`1.5`, default `1.0`) sets the speaking rate without changing the pitch; `1.5` is 1.5× faster. An invalid value is rejected with a non-fatal `error` carrying the `response_id`. |
 
 You may submit several `response.create` events without **waiting for each
 `response.done`** — see *Pipelining* below.
+
+### Writing `text` for accurate readings
+
+- **Postal codes**: write them as `NNN-NNNN` with a hyphen, e.g. `〒100-0001`.
+- **Numbers of four or more digits read as quantities**: separate the thousands
+  with commas, e.g. `12,345円`. A digit run without commas may be read digit by
+  digit, like an order number.
 
 ### Timestamps and heard-prefix tracking
 
@@ -50,7 +58,7 @@ finalized:
 ```json
 {
   "type": "audio.chunk",
-  "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
+  "audio": "BASE64_ENCODED_FLOAT32_AUDIO_BYTES",
   "isFinal": false,
   "response_id": "resp_001",
   "alignments": [{"start": 0.00, "end": 0.25, "text": "こん"}]
@@ -64,6 +72,8 @@ Each record has the following shape:
 | `start` | number | Start time in seconds from the beginning of this response's output audio. |
 | `end`   | number | End time in seconds from the beginning of this response's output audio. |
 | `text`  | string | Exact slice of the raw `text` sent in this `response.create`. |
+
+Times refer to the audio as delivered, so they already reflect `voice_settings.speed`.
 
 Records are monotone and non-overlapping. Each incremental record is delivered
 exactly once, and chunks with no newly finalized records omit `alignments`
@@ -146,7 +156,7 @@ response.create ─► response.created ─► audio.chunk* ─► response.done
                                   └──► response.done(cancelled)            # cancelled while active
                └─► response.queued ─► response.created ─► … ─► response.done
                                   └──► response.done(cancelled)            # cancelled while queued — NO response.created
-               └─► error(fatal:false, response_id)                        # rejected at submission (empty text, duplicate id, queue full)
+               └─► error(fatal:false, response_id)                        # rejected at submission (empty text, invalid voice_settings, duplicate id, queue full)
 ```
 
 1. A **queued** response cancelled before it starts goes straight to
@@ -157,19 +167,20 @@ response.create ─► response.created ─► audio.chunk* ─► response.done
 ### Output Audio Format
 
 The output encoding is negotiated on `open` via the optional `format` /
-`sample_rate` fields (both default to `pcm_f32` @ 24000 Hz, the historical
+`sample_rate` fields (both default to `float32` @ 24000 Hz, the historical
 behaviour). The negotiated values are echoed on `session.created`. Audio chunks
 are returned as **base64-encoded bytes** in the `audio.chunk.audio` field.
 
 | `format`  | Sample rate (`sample_rate`) | Channels | Encoding                    |
 | --------- | --------------------------- | -------- | --------------------------- |
-| `pcm_f32` | 8000 / 16000 / 24000 Hz     | 1 (mono) | Little-endian float32       |
-| `pcm_16`  | 8000 / 16000 / 24000 Hz     | 1 (mono) | Little-endian signed 16-bit |
+| `float32` | 8000 / 16000 / 24000 Hz     | 1 (mono) | Little-endian float32       |
+| `pcm16`   | 8000 / 16000 / 24000 Hz     | 1 (mono) | Little-endian signed 16-bit |
 | `mulaw`   | 8000 Hz (fixed)             | 1 (mono) | 8-bit G.711 mu-law          |
 | `opus`    | 24000 Hz (fixed)            | 1 (mono) | Ogg/Opus                    |
 
 `mulaw` always emits at 8000 Hz and `opus` at 24000 Hz; a `sample_rate`
-requested alongside them is ignored.
+requested alongside them is ignored. The former spellings `pcm_f32` and
+`pcm_16` are still accepted as aliases of `float32` and `pcm16`.
 
 ### Limits
 
@@ -200,7 +211,7 @@ Contains the event sequence that the server sends back:
 Additional server events:
 
 - `timeout` — Result timeout notification: the server produced no audio in time (non-fatal; session still alive)
-- `error` — Error notification. Carries **`fatal`** (`true` ⇒ the server is closing the connection, reconnect; `false` ⇒ the session continues, keep going) and, for errors tied to a specific `response.create` / `response.cancel`, the **`response_id`** it concerns (the client-supplied id, or `null` when none was provided). Errors with no `response_id` are session-scoped (e.g. malformed `open`, unsupported language); response-scoped non-fatal errors (empty text, duplicate id, queue full, unknown cancel target, or `timestamps_unavailable` when timestamps are requested from a deployment without timestamp support) let you retry on the same connection.
+- `error` — Error notification. Carries **`fatal`** (`true` ⇒ the server is closing the connection, reconnect; `false` ⇒ the session continues, keep going) and, for errors tied to a specific `response.create` / `response.cancel`, the **`response_id`** it concerns (the client-supplied id, or `null` when none was provided). Errors with no `response_id` are session-scoped (e.g. malformed `open`, unsupported language); response-scoped non-fatal errors (empty text, invalid `voice_settings`, duplicate id, queue full, unknown cancel target, or `timestamps_unavailable` when timestamps are requested from a deployment without timestamp support) let you retry on the same connection.
 
 ### Response-scoped IDs
 
@@ -234,7 +245,8 @@ Client                                    Server
   │      language, speaker_id, client_id)   |
   │                                         │
   │──── response.create ───────────────────►│
-  │     (text, response_id?, timestamps?)   │
+  │     (text, response_id?,                │
+  │      with_timestamps?, voice_settings?) │
   │                                         │
   │◄──── response.created ──────────────────│
   │     (response.id)                       │
@@ -244,7 +256,7 @@ Client                                    Server
   │      alignments? when enabled)           │
   │              ...                        │
   │◄──── audio.chunk (isFinal:true) ────────│
-  │     (timestamps when enabled)            │
+  │     (alignments? when enabled)           │
   │                                         │
   │◄──── response.done ─────────────────────│
   │     (response.id, status: completed)    │
