@@ -42,6 +42,13 @@ closes the connection.
 You may submit several `response.create` events without **waiting for each
 `response.done`** — see *Pipelining* below.
 
+### Writing `text` for accurate readings
+
+- **Postal codes**: write them as `NNN-NNNN` with a hyphen, e.g. `〒100-0001`.
+- **Numbers of four or more digits read as quantities**: separate the thousands
+  with commas, e.g. `12,345円`. A digit run without commas may be read digit by
+  digit, like an order number.
+
 ### Timestamps and heard-prefix tracking
 
 When `response.create.with_timestamps` is `true`, an `audio.chunk` includes an
