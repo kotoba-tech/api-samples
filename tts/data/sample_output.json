@@ -1,5 +1,5 @@
 {
-  "description": "Expected output event sequence for Kotoba TTS v1.6 (promptless, one-shot) with timestamps enabled when synthesizing 'こんにちは、世界。今日もよろしくお願いします。' with response_id='resp_001'",
+  "description": "Expected output event sequence for Kotoba TTS v1.8 (promptless, one-shot) with timestamps enabled when synthesizing 'こんにちは、世界。今日もよろしくお願いします。' with response_id='resp_001'",
   "session_config": {
     "language": "ja",
     "speaker_id": "default"
@@ -127,6 +127,13 @@
       "_comment": "Non-fatal notification that the server did not produce audio within WS_RESULT_TIMEOUT. The session stays open and synthesis may be retried. After WS_RESULT_TIMEOUT_LIMIT (default 3) consecutive timeouts the server emits a fatal `error` and closes the connection. The `message` field is the literal string the server sends.",
       "type": "timeout",
       "message": "worker result timeout"
+    },
+    "invalid_voice_settings": {
+      "_comment": "Non-fatal, response-scoped rejection of a response.create whose voice_settings.speed is out of range or not a number. No response.created or response.done follows for this id; the session stays open.",
+      "type": "error",
+      "message": "speed must be between 0.7 and 1.5",
+      "fatal": false,
+      "response_id": "resp_001"
     },
     "fatal_error": {
       "type": "error",

@@ -1,5 +1,5 @@
 {
-  "description": "Input event sequence for Kotoba TTS v1.6 (promptless, one-shot) bidirectional streaming",
+  "description": "Input event sequence for Kotoba TTS v1.8 (promptless, one-shot) bidirectional streaming",
   "protocol": "SageMaker Bidirectional Streaming (HTTP/2)",
   "endpoint_path": "/invocations-bidirectional-stream",
   "events": [
@@ -12,22 +12,26 @@
       "sample_rate": 24000
     },
     {
-      "_comment": "Step 2: Submit a synthesis turn. v1.0 is one-shot: the full `text` is sent inside `response.create`. There is no input_text_buffer.append / input_text_buffer.commit. `response_id` is optional (server generates a UUID when omitted) and is echoed on every response-scoped server event. `with_timestamps` is optional and defaults to false; true requests incremental audio.chunk.alignments.",
+      "_comment": "Step 2: Submit a synthesis turn. v1.0 is one-shot: the full `text` is sent inside `response.create`. There is no input_text_buffer.append / input_text_buffer.commit. `response_id` is optional (server generates a UUID when omitted) and is echoed on every response-scoped server event. `with_timestamps` is optional and defaults to false; true requests incremental audio.chunk.alignments. `voice_settings.speed` is optional (0.7-1.5, default 1.0) and sets the speaking rate without changing the pitch.",
       "type": "response.create",
       "text": "こんにちは、世界。今日もよろしくお願いします。",
       "response_id": "resp_001",
-      "with_timestamps": true
+      "with_timestamps": true,
+      "voice_settings": {
+        "speed": 1.0
+      }
     }
   ],
   "session_config": {
     "language_iso_639_1": ["ja"],
     "speaker_id_examples": ["default", "man-1", "woman-1"],
-    "_speaker_id_note": "`default` is always available; additional preset keys depend on the bundle. Unknown ids fail with response.done {status: failed, error.code: unknown_speaker_id}."
+    "_speaker_id_note": "`default` and `man-1` are the same male voice; `woman-1` is a female voice. Unknown ids fail with response.done {status: failed, error.code: unknown_speaker_id}."
   },
   "response_create_fields": {
     "text": "Required, non-empty string. The full text to synthesize.",
     "response_id": "Optional string. Echoed back on response.created / audio.chunk / response.done. Defaults to a server-generated UUID.",
-    "with_timestamps": "Optional boolean, default false. When true, audio chunks stream newly finalized alignments."
+    "with_timestamps": "Optional boolean, default false. When true, audio chunks stream newly finalized alignments.",
+    "voice_settings": "Optional object. `speed` is a number from 0.7 to 1.5 (default 1.0); 1.5 is 1.5x faster. An invalid value is rejected with a non-fatal error carrying the response_id."
   },
   "alt_client_events": {
     "cancel": {

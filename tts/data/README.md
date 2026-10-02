@@ -1,6 +1,6 @@
 # TTS Sample Data
 
-This directory contains sample input and output files for the Kotoba TTS v1.6 bidirectional streaming service.
+This directory contains sample input and output files for the Kotoba TTS v1.8 bidirectional streaming service.
 
 ## Files
 
@@ -21,7 +21,7 @@ Contains the event sequence that clients send to the TTS service:
 | Parameter              | Required | Default   | Description                                                                                                                                      |
 | ---------------------- | -------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `language`             | No       | `ja`      | ISO-639-1 language code. Must be in the server's supported list (`SUPPORTED_LANGUAGES`).                                                         |
-| `speaker_id`           | No       | `default` | Preset voice identifier. `default` is always available; additional preset keys depend on the bundle. Unknown ids fail with `unknown_speaker_id`. |
+| `speaker_id`           | No       | `default` | Preset voice: `default` or `man-1` (male; the same voice) or `woman-1` (female). Unknown ids fail with `unknown_speaker_id`.                 |
 | `format`               | No       | `float32` | Output audio encoding: `float32`, `pcm16`, `mulaw`, or `opus` (see *Output Audio Format*).                                                       |
 | `sample_rate`          | No       | `24000`   | Output sample rate (`8000` / `16000` / `24000`). Ignored for `mulaw` (forced 8 kHz) and `opus` (forced 24 kHz).                                  |
 | `spk_ref_audio_tokens` | No       | —         | Optional speaker reference tokens for the requested voice.                                                                                       |
@@ -37,6 +37,7 @@ closes the connection.
 | `text`        | **Yes**  | —               | The full text to synthesize. Must be a non-empty string. Sent inside `response.create` — v1.0 does not stream text chunks.                                                                                                                         |
 | `response_id` | No       | server-gen UUID | Client-supplied id. Echoed on `response.queued` / `response.created` / every `audio.chunk` / `response.done` for correlation. Must be unique among outstanding (active or queued) responses; reusable once its `response.done` has been delivered. |
 | `with_timestamps`  | No       | `false`         | Set to `true` to receive incremental `alignments` records on audio chunks.                                                                                                                  |
+| `voice_settings`   | No       | —               | Optional object. `speed` (number, `0.7`–`1.5`, default `1.0`) sets the speaking rate without changing the pitch; `1.5` is 1.5× faster. An invalid value is rejected with a non-fatal `error` carrying the `response_id`. |
 
 You may submit several `response.create` events without **waiting for each
 `response.done`** — see *Pipelining* below.
@@ -64,6 +65,8 @@ Each record has the following shape:
 | `start` | number | Start time in seconds from the beginning of this response's output audio. |
 | `end`   | number | End time in seconds from the beginning of this response's output audio. |
 | `text`  | string | Exact slice of the raw `text` sent in this `response.create`. |
+
+Times refer to the audio as delivered, so they already reflect `voice_settings.speed`.
 
 Records are monotone and non-overlapping. Each incremental record is delivered
 exactly once, and chunks with no newly finalized records omit `alignments`
@@ -146,7 +149,7 @@ response.create ─► response.created ─► audio.chunk* ─► response.done
                                   └──► response.done(cancelled)            # cancelled while active
                └─► response.queued ─► response.created ─► … ─► response.done
                                   └──► response.done(cancelled)            # cancelled while queued — NO response.created
-               └─► error(fatal:false, response_id)                        # rejected at submission (empty text, duplicate id, queue full)
+               └─► error(fatal:false, response_id)                        # rejected at submission (empty text, invalid voice_settings, duplicate id, queue full)
 ```
 
 1. A **queued** response cancelled before it starts goes straight to
@@ -201,7 +204,7 @@ Contains the event sequence that the server sends back:
 Additional server events:
 
 - `timeout` — Result timeout notification: the server produced no audio in time (non-fatal; session still alive)
-- `error` — Error notification. Carries **`fatal`** (`true` ⇒ the server is closing the connection, reconnect; `false` ⇒ the session continues, keep going) and, for errors tied to a specific `response.create` / `response.cancel`, the **`response_id`** it concerns (the client-supplied id, or `null` when none was provided). Errors with no `response_id` are session-scoped (e.g. malformed `open`, unsupported language); response-scoped non-fatal errors (empty text, duplicate id, queue full, unknown cancel target, or `timestamps_unavailable` when timestamps are requested from a deployment without timestamp support) let you retry on the same connection.
+- `error` — Error notification. Carries **`fatal`** (`true` ⇒ the server is closing the connection, reconnect; `false` ⇒ the session continues, keep going) and, for errors tied to a specific `response.create` / `response.cancel`, the **`response_id`** it concerns (the client-supplied id, or `null` when none was provided). Errors with no `response_id` are session-scoped (e.g. malformed `open`, unsupported language); response-scoped non-fatal errors (empty text, invalid `voice_settings`, duplicate id, queue full, unknown cancel target, or `timestamps_unavailable` when timestamps are requested from a deployment without timestamp support) let you retry on the same connection.
 
 ### Response-scoped IDs
 
@@ -235,7 +238,8 @@ Client                                    Server
   │      language, speaker_id, client_id)   |
   │                                         │
   │──── response.create ───────────────────►│
-  │     (text, response_id?, timestamps?)   │
+  │     (text, response_id?, timestamps?,   │
+  │      voice_settings?)                   │
   │                                         │
   │◄──── response.created ──────────────────│
   │     (response.id)                       │
