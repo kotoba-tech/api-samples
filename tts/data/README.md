@@ -245,8 +245,8 @@ Client                                    Server
   │      language, speaker_id, client_id)   |
   │                                         │
   │──── response.create ───────────────────►│
-  │     (text, response_id?, timestamps?,   │
-  │      voice_settings?)                   │
+  │     (text, response_id?,                │
+  │      with_timestamps?, voice_settings?) │
   │                                         │
   │◄──── response.created ──────────────────│
   │     (response.id)                       │
