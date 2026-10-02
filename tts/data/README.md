@@ -245,7 +245,7 @@ Client                                    Server
   │      alignments? when enabled)           │
   │              ...                        │
   │◄──── audio.chunk (isFinal:true) ────────│
-  │     (timestamps when enabled)            │
+  │     (alignments? when enabled)           │
   │                                         │
   │◄──── response.done ─────────────────────│
   │     (response.id, status: completed)    │
