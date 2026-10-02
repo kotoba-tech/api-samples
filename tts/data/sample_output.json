@@ -5,7 +5,7 @@
     "speaker_id": "default"
   },
   "output_audio": {
-    "format": "pcm_f32",
+    "format": "float32",
     "sample_rate": 24000,
     "channels": 1,
     "encoding": "little-endian"
@@ -14,7 +14,7 @@
     {
       "_comment": "Sent by the server in response to the client's open event (after language and speaker_id are validated). `client_id` is the server-assigned session identifier.",
       "type": "session.created",
-      "format": "pcm_f32",
+      "format": "float32",
       "sample_rate": 24000,
       "channels": 1,
       "language": "ja",
@@ -29,17 +29,17 @@
       }
     },
     {
-      "_comment": "Early streaming audio delta. `audio` is base64-encoded pcm_f32 (little-endian float32). `response_id` lets the client correlate chunks back to the originating response.create. No timestamp record has been finalized yet, so this chunk omits `alignments` entirely.",
+      "_comment": "Early streaming audio delta. `audio` is base64-encoded float32 (little-endian). `response_id` lets the client correlate chunks back to the originating response.create. No timestamp record has been finalized yet, so this chunk omits `alignments` entirely.",
       "type": "audio.chunk",
       "response_id": "resp_001",
-      "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
+      "audio": "BASE64_ENCODED_FLOAT32_AUDIO_BYTES",
       "isFinal": false
     },
     {
       "_comment": "Newly finalized records appear exactly once in `alignments`. Their text concatenates to a prefix of the raw request text.",
       "type": "audio.chunk",
       "response_id": "resp_001",
-      "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
+      "audio": "BASE64_ENCODED_FLOAT32_AUDIO_BYTES",
       "isFinal": false,
       "alignments": [
         {"start": 0.00, "end": 0.25, "text": "こん"},
@@ -49,7 +49,7 @@
     {
       "type": "audio.chunk",
       "response_id": "resp_001",
-      "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
+      "audio": "BASE64_ENCODED_FLOAT32_AUDIO_BYTES",
       "isFinal": false,
       "alignments": [
         {"start": 0.50, "end": 0.65, "text": "は"},
@@ -61,7 +61,7 @@
     {
       "type": "audio.chunk",
       "response_id": "resp_001",
-      "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
+      "audio": "BASE64_ENCODED_FLOAT32_AUDIO_BYTES",
       "isFinal": false,
       "alignments": [
         {"start": 1.18, "end": 1.45, "text": "今日"},
@@ -74,7 +74,7 @@
       "_comment": "The final chunk carries the last newly finalized records in `alignments`; the records received across all chunks concatenate to the full request text.",
       "type": "audio.chunk",
       "response_id": "resp_001",
-      "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
+      "audio": "BASE64_ENCODED_FLOAT32_AUDIO_BYTES",
       "isFinal": true,
       "alignments": [
         {"start": 2.08, "end": 2.35, "text": "お願"},

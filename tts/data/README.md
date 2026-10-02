@@ -22,7 +22,7 @@ Contains the event sequence that clients send to the TTS service:
 | ---------------------- | -------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `language`             | No       | `ja`      | ISO-639-1 language code. Must be in the server's supported list (`SUPPORTED_LANGUAGES`).                                                         |
 | `speaker_id`           | No       | `default` | Preset voice identifier. `default` is always available; additional preset keys depend on the bundle. Unknown ids fail with `unknown_speaker_id`. |
-| `format`               | No       | `pcm_f32` | Output audio encoding: `pcm_f32`, `pcm_16`, `mulaw`, or `opus` (see *Output Audio Format*).                                                      |
+| `format`               | No       | `float32` | Output audio encoding: `float32`, `pcm16`, `mulaw`, or `opus` (see *Output Audio Format*).                                                       |
 | `sample_rate`          | No       | `24000`   | Output sample rate (`8000` / `16000` / `24000`). Ignored for `mulaw` (forced 8 kHz) and `opus` (forced 24 kHz).                                  |
 | `spk_ref_audio_tokens` | No       | —         | Optional speaker reference tokens for the requested voice.                                                                                       |
 
@@ -50,7 +50,7 @@ finalized:
 ```json
 {
   "type": "audio.chunk",
-  "audio": "BASE64_ENCODED_PCM_F32_AUDIO_BYTES",
+  "audio": "BASE64_ENCODED_FLOAT32_AUDIO_BYTES",
   "isFinal": false,
   "response_id": "resp_001",
   "alignments": [{"start": 0.00, "end": 0.25, "text": "こん"}]
@@ -157,19 +157,20 @@ response.create ─► response.created ─► audio.chunk* ─► response.done
 ### Output Audio Format
 
 The output encoding is negotiated on `open` via the optional `format` /
-`sample_rate` fields (both default to `pcm_f32` @ 24000 Hz, the historical
+`sample_rate` fields (both default to `float32` @ 24000 Hz, the historical
 behaviour). The negotiated values are echoed on `session.created`. Audio chunks
 are returned as **base64-encoded bytes** in the `audio.chunk.audio` field.
 
 | `format`  | Sample rate (`sample_rate`) | Channels | Encoding                    |
 | --------- | --------------------------- | -------- | --------------------------- |
-| `pcm_f32` | 8000 / 16000 / 24000 Hz     | 1 (mono) | Little-endian float32       |
-| `pcm_16`  | 8000 / 16000 / 24000 Hz     | 1 (mono) | Little-endian signed 16-bit |
+| `float32` | 8000 / 16000 / 24000 Hz     | 1 (mono) | Little-endian float32       |
+| `pcm16`   | 8000 / 16000 / 24000 Hz     | 1 (mono) | Little-endian signed 16-bit |
 | `mulaw`   | 8000 Hz (fixed)             | 1 (mono) | 8-bit G.711 mu-law          |
 | `opus`    | 24000 Hz (fixed)            | 1 (mono) | Ogg/Opus                    |
 
 `mulaw` always emits at 8000 Hz and `opus` at 24000 Hz; a `sample_rate`
-requested alongside them is ignored.
+requested alongside them is ignored. The former spellings `pcm_f32` and
+`pcm_16` are still accepted as aliases of `float32` and `pcm16`.
 
 ### Limits
 
