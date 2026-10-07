@@ -18,7 +18,7 @@ Contains the event sequence that clients send to the STT service:
 3. `input_audio_buffer.commit` - Signal end of audio
 
 Set `input_audio_transcription.kana` to `true` to transcribe person names in katakana.
-Set `input_audio_transcription.keywords` to bias recognition toward the listed terms.
+Set `input_audio_transcription.keywords` to bias recognition toward the listed terms: up to 100 terms, each up to 50 characters. A list over either limit is rejected with an `error` event (`code`: `invalid_parameters`), and the server keeps waiting for a corrected `transcription_session.update` within the 10 s session-init window.
 
 ### Turn detection (server VAD)
 

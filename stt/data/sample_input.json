@@ -13,7 +13,7 @@
         "input_audio_transcription": {
           "language": "ja",
           "target_language": "ja",
-          "keywords": [],
+          "keywords": ["Kotoba", "音声認識"],
           "kana": false
         },
         "turn_detection": {
