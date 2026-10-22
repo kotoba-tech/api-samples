@@ -14,7 +14,10 @@
           "language": "ja",
           "target_language": "ja",
           "keywords": ["Kotoba", "音声認識"],
-          "kana": false
+          "style_preference": {
+            "human_name": "default",
+            "verbatim": false
+          }
         },
         "turn_detection": {
           "type": "server_vad",

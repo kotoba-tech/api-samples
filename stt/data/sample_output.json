@@ -14,7 +14,10 @@
       "language": "ja",
       "target_language": "ja",
       "keywords": [],
-      "kana": false
+      "style_preference": {
+        "human_name": "default",
+        "verbatim": false
+      }
     },
     "turn_detection": false
   },
@@ -35,7 +38,11 @@
           "language": "ja",
           "target_language": "ja",
           "keywords": [],
-          "kana": false
+          "kana": false,
+          "style_preference": {
+            "human_name": "default",
+            "verbatim": false
+          }
         },
         "turn_detection": false
       }
