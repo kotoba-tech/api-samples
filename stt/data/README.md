@@ -17,7 +17,13 @@ Contains the event sequence that clients send to the STT service:
 2. `input_audio_buffer.append` - Send audio chunks (base64 encoded)
 3. `input_audio_buffer.commit` - Signal end of audio
 
-Set `input_audio_transcription.kana` to `true` to transcribe person names in katakana.
+Set `input_audio_transcription.style_preference` to choose the transcript style:
+
+- `human_name`: `"kana"` transcribes person names in katakana (default: `"default"`).
+- `verbatim`: `false` (default) omits fillers and restarts (e.g. えーと, あの) from Japanese transcripts; `true` keeps them.
+
+`input_audio_transcription.kana` is **deprecated and will be removed in a future release**. `kana: true` still works and is the same as `style_preference.human_name: "kana"`; please migrate to `style_preference`.
+
 Set `input_audio_transcription.keywords` to bias recognition toward the listed terms: up to 100 terms, each up to 50 characters. A list over either limit is rejected with an `error` event (`code`: `invalid_parameters`), and the server keeps waiting for a corrected `transcription_session.update` within the 10 s session-init window.
 
 ### Turn detection (server VAD)
