@@ -1,8 +1,8 @@
 {
-  "description": "Expected output event sequence for Kotoba TTS v1.8 (promptless, one-shot) with timestamps enabled when synthesizing 'こんにちは、世界。今日もよろしくお願いします。' with response_id='resp_001'",
+  "description": "Expected output event sequence for Kotoba TTS v1.9 (promptless, one-shot) with timestamps enabled when synthesizing 'こんにちは、世界。今日もよろしくお願いします。' with response_id='resp_001'",
   "session_config": {
     "language": "ja",
-    "speaker_id": "default"
+    "speaker_id": "male-01"
   },
   "output_audio": {
     "format": "float32",
@@ -12,13 +12,18 @@
   },
   "events": [
     {
-      "_comment": "Sent by the server in response to the client's open event (after language and speaker_id are validated). `client_id` is the server-assigned session identifier.",
+      "_comment": "Sent by the server in response to the client's open event (after language and speaker_id are validated). `voice_settings` echoes the session defaults (from open, or speed 1.0 / pitch 0 / volume 1.0). `client_id` is the server-assigned session identifier.",
       "type": "session.created",
       "format": "float32",
       "sample_rate": 24000,
       "channels": 1,
       "language": "ja",
-      "speaker_id": "default",
+      "speaker_id": "male-01",
+      "voice_settings": {
+        "speed": 1.0,
+        "pitch": 0.0,
+        "volume": 1.0
+      },
       "client_id": "sess_abc123"
     },
     {
@@ -126,19 +131,40 @@
     "worker_timeout": {
       "_comment": "Non-fatal notification that the server did not produce audio within WS_RESULT_TIMEOUT. The session stays open and synthesis may be retried. After WS_RESULT_TIMEOUT_LIMIT (default 3) consecutive timeouts the server emits a fatal `error` and closes the connection. The `message` field is the literal string the server sends.",
       "type": "timeout",
-      "message": "worker result timeout"
+      "message": "worker result timeout",
+      "response_id": "resp_001"
     },
     "invalid_voice_settings": {
-      "_comment": "Non-fatal, response-scoped rejection of a response.create whose voice_settings.speed is out of range or not a number. No response.created or response.done follows for this id; the session stays open.",
+      "_comment": "Non-fatal, response-scoped rejection of a response.create whose voice_settings has a field out of range or not a number; `message` names the field. No response.created or response.done follows for this id; the session stays open.",
       "type": "error",
-      "message": "speed must be between 0.7 and 1.5",
+      "code": "invalid_request",
+      "message": "voice_settings.pitch must be between -4.0 and 4.0",
       "fatal": false,
       "response_id": "resp_001"
     },
+    "timestamps_text_too_long": {
+      "_comment": "Non-fatal, response-scoped rejection of a response.create with with_timestamps: true whose text is longer than 400 characters. No response.created or response.done follows for this id; the session stays open.",
+      "type": "error",
+      "code": "invalid_request",
+      "message": "with_timestamps supports text up to 400 characters",
+      "fatal": false,
+      "response_id": "resp_001"
+    },
+    "length_limited": {
+      "_comment": "The response reached the model's output length limit. It still ends as completed; the audio already sent is kept.",
+      "type": "response.done",
+      "response": {
+        "id": "resp_001",
+        "status": "completed",
+        "finish_reason": "length"
+      }
+    },
     "fatal_error": {
+      "_comment": "Fatal, session-scoped: the server closes the connection after it.",
       "type": "error",
       "message": "unsupported_language",
-      "code": "unsupported_language"
+      "fatal": true,
+      "response_id": null
     }
   }
 }

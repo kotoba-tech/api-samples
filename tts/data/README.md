@@ -1,6 +1,6 @@
 # TTS Sample Data
 
-This directory contains sample input and output files for the Kotoba TTS v1.8 bidirectional streaming service.
+This directory contains sample input and output files for the Kotoba TTS v1.9 bidirectional streaming service.
 
 ## Files
 
@@ -13,7 +13,7 @@ This directory contains sample input and output files for the Kotoba TTS v1.8 bi
 
 Contains the event sequence that clients send to the TTS service:
 
-1. `open` — Configure session (language, speaker_id, optional `spk_ref_audio_tokens`)
+1. `open` — Configure session (language, speaker_id, optional `voice_settings` defaults, optional `spk_ref_audio_tokens`)
 2. `response.create` — Submit the full text for synthesis (one-shot; repeatable per session)
 
 ### `open` Parameters
@@ -21,13 +21,14 @@ Contains the event sequence that clients send to the TTS service:
 | Parameter              | Required | Default   | Description                                                                                                                                      |
 | ---------------------- | -------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `language`             | No       | `ja`      | ISO-639-1 language code. Must be in the server's supported list (`SUPPORTED_LANGUAGES`).                                                         |
-| `speaker_id`           | No       | `default` | Preset voice: `default` or `man-1` (male; the same voice) or `woman-1` (female). Unknown ids fail with `unknown_speaker_id`.                 |
+| `speaker_id`           | No       | `default` | Preset voice: `male-01` (male), `female-01`, `female-02`, `female-03`, `female-04` (female). `default` is the same voice as `male-01`. `man-1` and `woman-1` are **deprecated** (see *Deprecated*). Unknown ids fail with `unknown_speaker_id`. |
 | `format`               | No       | `float32` | Output audio encoding: `float32`, `pcm16`, `mulaw`, or `opus` (see *Output Audio Format*).                                                       |
 | `sample_rate`          | No       | `24000`   | Output sample rate (`8000` / `16000` / `24000`). Ignored for `mulaw` (forced 8 kHz) and `opus` (forced 24 kHz).                                  |
+| `voice_settings`       | No       | —         | Session defaults for `speed`, `pitch` and `volume` (see *Voice settings*). Each `response.create` can override them field by field. An invalid value fails the `open` and closes the connection. |
 | `spk_ref_audio_tokens` | No       | —         | Optional speaker reference tokens for the requested voice.                                                                                       |
 
-The negotiated `format` / `sample_rate` / `channels` are echoed back on
-`session.created`. An unsupported `format` or `sample_rate` fails the `open` and
+The negotiated `format` / `sample_rate` / `channels` and the session's
+`voice_settings` are echoed back on `session.created`. An unsupported `format` or `sample_rate` fails the `open` and
 closes the connection.
 
 ### `response.create` Parameters
@@ -36,11 +37,32 @@ closes the connection.
 | ------------- | -------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `text`        | **Yes**  | —               | The full text to synthesize. Must be a non-empty string. Sent inside `response.create` — v1.0 does not stream text chunks.                                                                                                                         |
 | `response_id` | No       | server-gen UUID | Client-supplied id. Echoed on `response.queued` / `response.created` / every `audio.chunk` / `response.done` for correlation. Must be unique among outstanding (active or queued) responses; reusable once its `response.done` has been delivered. |
-| `with_timestamps`  | No       | `false`         | Set to `true` to receive incremental `alignments` records on audio chunks.                                                                                                                  |
-| `voice_settings`   | No       | —               | Optional object. `speed` (number, `0.7`–`1.5`, default `1.0`) sets the speaking rate without changing the pitch; `1.5` is 1.5× faster. An invalid value is rejected with a non-fatal `error` carrying the `response_id`. |
+| `with_timestamps`  | No       | `false`         | Set to `true` to receive incremental `alignments` records on audio chunks. Text of up to 400 characters only (see *Limits*).                                                                |
+| `voice_settings`   | No       | session default | Optional object with `speed`, `pitch` and `volume` for this response (see *Voice settings*). Fields left out keep the session default from `open`. An invalid value is rejected with a non-fatal `error` carrying the `response_id`. |
+| `max_length`       | No       | —               | **Deprecated.** Accepted and ignored (see *Deprecated*).                                                                                                                                    |
 
 You may submit several `response.create` events without **waiting for each
 `response.done`** — see *Pipelining* below.
+
+### Voice settings
+
+`voice_settings` can be set on `open` (the session default) and on each
+`response.create` (this response only). Every field is optional:
+
+| Field    | Range            | Default | Effect                                                                                                         |
+| -------- | ---------------- | ------- | -------------------------------------------------------------------------------------------------------------- |
+| `speed`  | `0.7`–`1.5`      | `1.0`   | Speaking rate without changing the pitch; `1.5` is 1.5× faster.                                                |
+| `pitch`  | `-4`–`4`         | `0`     | Pitch shift in semitones without changing the speaking rate.                                                   |
+| `volume` | `0.0`–`2.0`      | `1.0`   | Loudness multiplier; `0.0` is silent. Above `1.0` the audio is limited at full scale, so the loudest passages may clip slightly. |
+
+```json
+{"type": "response.create", "text": "こんにちは。", "voice_settings": {"speed": 1.2, "pitch": 2, "volume": 0.8}}
+```
+
+A value that is out of range or not a number is rejected with an `error`
+whose `message` names the field, e.g. `voice_settings.pitch must be between
+-4.0 and 4.0` or `voice_settings.speed must be a number`. On `response.create`
+the error is non-fatal and carries the `response_id`; on `open` it is fatal.
 
 ### Writing `text` for accurate readings
 
@@ -74,6 +96,7 @@ Each record has the following shape:
 | `text`  | string | Exact slice of the raw `text` sent in this `response.create`. |
 
 Times refer to the audio as delivered, so they already reflect `voice_settings.speed`.
+`pitch` and `volume` do not change the timing.
 
 Records are monotone and non-overlapping. Each incremental record is delivered
 exactly once, and chunks with no newly finalized records omit `alignments`
@@ -111,7 +134,7 @@ for `response.done` before sending the next `response.create`. Extra requests ar
 - If a response is already active (or others are queued), the new one is accepted
   and acknowledged with **`response.queued`** (same `response.id`). It later starts
   with `response.created` when its turn comes.
-- The pending queue is bounded (`WS_MAX_PENDING_RESPONSES`, default 15). Exceeding
+- The pending queue holds at most 15 responses. Exceeding
   it returns a non-fatal `error` (`too many queued responses`) carrying the
   rejected `response_id`.
 
@@ -185,12 +208,16 @@ requested alongside them is ignored. The former spellings `pcm_f32` and
 ### Limits
 
 - `open` must be sent within 10s of connection (`WS_OPEN_TIMEOUT`)
+- `with_timestamps: true` accepts `text` of up to 400 characters. Longer text is
+  rejected with a non-fatal `error` (`with_timestamps supports text up to 400
+  characters`) carrying the `response_id`; split it across several
+  `response.create` events, or send it without timestamps.
 - Client idle timeout: 60s (`WS_IDLE_TIMEOUT`). The timer is reset by every
   client message and every major server event (`response.created` / `queued` /
   `done` / `error`) — but **not** by `audio.chunk`. With a normal per-response
   synthesis well under the timeout, draining a queue keeps resetting it, so the
   countdown effectively starts after the last `response.done`.
-- Pending queue depth: `WS_MAX_PENDING_RESPONSES` (default 15). A `response.create`
+- Pending queue depth: 15 responses. A `response.create`
   that would exceed it is rejected with a non-fatal `error` (`too many queued
   responses`).
 - Result timeout: 60s (`WS_RESULT_TIMEOUT`); if no audio is produced in time the
@@ -206,12 +233,12 @@ Contains the event sequence that the server sends back:
 2. `response.queued` — A `response.create` was accepted but cannot start yet because another response is active; carries `response.id`. It will later emit `response.created`. Only appears when pipelining (see *Pipelining*).
 3. `response.created` — Synthesis response started (carries `response.id`)
 4. `audio.chunk` — Audio delta (base64, multiple; each carries `response_id` and an `isFinal` flag). With timestamps enabled, chunks carrying newly finalized records also have `alignments`.
-5. `response.done` — Synthesis turn finished (`status`: `completed` / `cancelled` / `failed`; carries `response.id`; carries a `usage` token-count object whenever tokens were consumed)
+5. `response.done` — Synthesis turn finished (`status`: `completed` / `cancelled` / `failed`; carries `response.id`; carries a `usage` token-count object whenever tokens were consumed). A response that reached the model's output length limit ends as `completed` with `finish_reason: "length"`; the audio already sent is kept.
 
 Additional server events:
 
 - `timeout` — Result timeout notification: the server produced no audio in time (non-fatal; session still alive)
-- `error` — Error notification. Carries **`fatal`** (`true` ⇒ the server is closing the connection, reconnect; `false` ⇒ the session continues, keep going) and, for errors tied to a specific `response.create` / `response.cancel`, the **`response_id`** it concerns (the client-supplied id, or `null` when none was provided). Errors with no `response_id` are session-scoped (e.g. malformed `open`, unsupported language); response-scoped non-fatal errors (empty text, invalid `voice_settings`, duplicate id, queue full, unknown cancel target, or `timestamps_unavailable` when timestamps are requested from a deployment without timestamp support) let you retry on the same connection.
+- `error` — Error notification. Carries **`fatal`** (`true` ⇒ the server is closing the connection, reconnect; `false` ⇒ the session continues, keep going) and, for errors tied to a specific `response.create` / `response.cancel`, the **`response_id`** it concerns (the client-supplied id, or `null` when none was provided). Errors with no `response_id` are session-scoped (e.g. malformed `open`, unsupported language); response-scoped non-fatal errors (empty text, invalid `voice_settings`, timestamps on text over 400 characters, duplicate id, queue full, unknown cancel target, or `timestamps_unavailable` when timestamps are requested from a deployment without timestamp support) let you retry on the same connection.
 
 ### Response-scoped IDs
 
@@ -238,11 +265,13 @@ Client                                    Server
   │                                         │
   │──── open ──────────────────────────────►│
   │     (language, speaker_id,              │
+  │      voice_settings?,                   │
   │      optional spk_ref_audio_tokens)     │
   │                                         │
   │◄──── session.created ───────────────────│
   │     (format, sample_rate, channels,     │
-  │      language, speaker_id, client_id)   |
+  │      language, speaker_id,              │
+  │      voice_settings, client_id)         │
   │                                         │
   │──── response.create ───────────────────►│
   │     (text, response_id?,                │
@@ -284,6 +313,16 @@ Client                                    Server
   │◄──── response.done   (B, completed) ─────│
 ```
 
+## Deprecated
+
+These still work in v1.9 but will be removed in a future version:
+
+| Deprecated                     | Use instead                                     |
+| ------------------------------ | ----------------------------------------------- |
+| `speaker_id: "man-1"`          | `speaker_id: "male-01"` (the same voice)        |
+| `speaker_id: "woman-1"`        | `speaker_id: "female-01"` (the same voice)      |
+| `response.create.max_length`   | Nothing; it is ignored and the output length follows the text. |
+
 ## Changes from v0.1
 
 If you are migrating from v0.1, the client wire protocol is meaningfully different:
@@ -292,7 +331,7 @@ If you are migrating from v0.1, the client wire protocol is meaningfully differe
 | ------------------------ | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | Text submission          | `response.create` (no text) + one or more `input_text_buffer.append` + `input_text_buffer.commit` | `response.create` carries the full `text` directly      |
 | `input_text_buffer.*`    | Supported                                                                                         | **Removed**                                             |
-| `response.create` extras | —                                                                                                 | Optional `response_id`, optional `max_length`           |
+| `response.create` extras | —                                                                                                 | Optional `response_id`, optional `max_length` (deprecated in v1.9) |
 | `response.created`       | `{"type": "response.created"}`                                                                    | `{"type": "response.created", "response": {"id": ...}}` |
 | `audio.chunk`            | `{"type": "audio.chunk", "audio": ..., "isFinal": ...}`                                           | adds `"response_id": ...`                               |
 | `response.done`          | `{"type": "response.done", "response": {"status": ...}}`                                          | adds `"id"`: `{"response": {"id": ..., "status": ...}}` |
