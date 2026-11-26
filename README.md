@@ -15,7 +15,7 @@ All Kotoba products use **SageMaker bidirectional streaming only**:
 
 - Standard `POST /invocations` is **NOT supported**
 - Batch transform jobs are **NOT supported**
-- Requires Python 3.12+ with `aws-sdk-python[sagemaker-runtime-http2]`
+- Requires Python 3.12+ with `aws-sdk-python[sagemaker-runtime-http2]==0.13.1` and `smithy-http[awscrt]` (the sample notebooks use the 0.13 client API)
 
 ## Quick Links
 
@@ -41,4 +41,4 @@ All Kotoba products use **SageMaker bidirectional streaming only**:
 
 - AWS Account with SageMaker permissions
 - Python 3.12+
-- `aws-sdk-python[sagemaker-runtime-http2]`
+- `aws-sdk-python[sagemaker-runtime-http2]==0.13.1` and `smithy-http[awscrt]`
