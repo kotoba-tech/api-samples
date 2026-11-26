@@ -1,0 +1,107 @@
+{
+  "description": "Input event sequence for Kotoba Japanese STT Streaming",
+  "protocol": "SageMaker Bidirectional Streaming (HTTP/2)",
+  "endpoint_path": "/invocations-bidirectional-stream",
+  "events": [
+    {
+      "_comment": "Step 1: Configure the session once, after receiving transcription_session.created",
+      "type": "transcription_session.update",
+      "session": {
+        "input_audio_format": "pcm16",
+        "input_audio_sample_rate": 24000,
+        "input_audio_number_of_channels": 1,
+        "input_audio_transcription": {
+          "language": "ja",
+          "target_language": "ja",
+          "keywords": ["Kotoba", "音声認識"],
+          "style_preference": {
+            "human_name": "kana",
+            "verbatim": false
+          },
+          "timestamps": true
+        },
+        "turn_detection": {
+          "type": "semantic_vad",
+          "eagerness": "medium"
+        }
+      }
+    },
+    {
+      "_comment": "Step 2: Send audio chunks after transcription_session.updated (80 ms recommended, 8 seconds max per event)",
+      "event_id": "chunk_0000001",
+      "type": "input_audio_buffer.append",
+      "audio": "BASE64_ENCODED_PCM16_AUDIO_BYTES"
+    },
+    {
+      "_comment": "Step 2 (continued): Send more audio chunks",
+      "event_id": "chunk_0000002",
+      "type": "input_audio_buffer.append",
+      "audio": "BASE64_ENCODED_PCM16_AUDIO_BYTES"
+    },
+    {
+      "_comment": "Step 3: Signal the end of audio; event_id is returned as the item_id of input_audio_buffer.committed",
+      "event_id": "commit_0000001",
+      "type": "input_audio_buffer.commit"
+    }
+  ],
+  "audio_format_specs": {
+    "pcm16": {
+      "description": "16-bit signed integer PCM",
+      "encoding": "little-endian",
+      "sample_rate": "any (input_audio_sample_rate, default 24000)",
+      "channels": "input_audio_number_of_channels, downmixed to mono",
+      "bytes_per_sample": 2
+    },
+    "float32": {
+      "description": "32-bit floating point PCM",
+      "encoding": "little-endian",
+      "sample_rate": "any (input_audio_sample_rate, default 24000)",
+      "channels": "input_audio_number_of_channels, downmixed to mono",
+      "bytes_per_sample": 4,
+      "range": [-1.0, 1.0]
+    },
+    "mulaw": {
+      "description": "G.711 μ-law",
+      "encoding": "G.711 μ-law",
+      "sample_rate": 8000,
+      "channels": "input_audio_number_of_channels, downmixed to mono",
+      "bytes_per_sample": 1
+    },
+    "twilio": {
+      "description": "G.711 μ-law (same as mulaw; Twilio Media Streams)",
+      "encoding": "G.711 μ-law",
+      "sample_rate": 8000,
+      "channels": "input_audio_number_of_channels, downmixed to mono",
+      "bytes_per_sample": 1
+    },
+    "opus": {
+      "description": "Self-contained Ogg/Opus stream per append event",
+      "encoding": "Ogg/Opus",
+      "sample_rate": "decoded at 48000",
+      "channels": "from the stream, downmixed to mono"
+    }
+  },
+  "limits": {
+    "max_audio_per_event_seconds": 8,
+    "recommended_chunk_ms": 80,
+    "recommended_sample_rate": 24000,
+    "max_keywords": 1000,
+    "max_keyword_characters": 64,
+    "max_event_id_characters": 36,
+    "session_init_timeout_seconds": 60,
+    "max_session_seconds": 86400
+  },
+  "turn_detection_options": {
+    "_comment": "session.turn_detection accepts false (default) or one of the objects below",
+    "disabled": false,
+    "server_vad": {
+      "type": "server_vad",
+      "silence_duration_ms": 800
+    },
+    "semantic_vad": {
+      "type": "semantic_vad",
+      "eagerness": "auto"
+    },
+    "_notes": "With false, concatenate delta events and use input_audio_buffer.committed as the done signal. server_vad ends a turn after silence_duration_ms (default 800) without new words. semantic_vad ends a turn soon after a finished sentence and waits longer through pauses inside one; eagerness is low, medium, high or auto (same as medium). Both emit conversation.item.input_audio_transcription.completed per turn. Tune for your application and downstream pipeline."
+  }
+}

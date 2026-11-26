@@ -4,10 +4,11 @@ This repository contains sample notebooks and data files for Kotoba ML products 
 
 ## Products
 
-| Product                        | Description                                                | Status    |
-| ------------------------------ | ---------------------------------------------------------- | --------- |
-| [STT (Speech-to-Text)](./stt/) | Real-time speech transcription via bidirectional streaming | Available |
-| [TTS (Text-to-Speech)](./tts/) | Real-time speech synthesis via bidirectional streaming     | Available |
+| Product                                                                     | Description                                                         | Status    |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------- | --------- |
+| [STT (Speech-to-Text)](./stt/)                                              | Real-time speech transcription via bidirectional streaming          | Available |
+| [Japanese STT (Speech-to-Text)](./japanese-streaming-stt/)                  | Real-time Japanese speech transcription, billed per hour of audio   | Limited   |
+| [TTS (Text-to-Speech)](./tts/)                                              | Real-time speech synthesis via bidirectional streaming              | Available |
 
 ## Important Notice
 
@@ -24,6 +25,12 @@ All Kotoba products use **SageMaker bidirectional streaming only**:
 - **Sample Notebook**: [kotoba-stt-streaming.ipynb](./stt/kotoba-stt-streaming.ipynb)
 - **Input Event Sample**: [sample_input.json](./stt/data/sample_input.json)
 - **Output Event Sample**: [sample_output.json](./stt/data/sample_output.json)
+
+### Japanese STT (Speech-to-Text)
+
+- **Sample Notebook**: [kotoba-japanese-streaming-stt.ipynb](./japanese-streaming-stt/kotoba-japanese-streaming-stt.ipynb)
+- **Input Event Sample**: [sample_input.json](./japanese-streaming-stt/data/sample_input.json)
+- **Output Event Sample**: [sample_output.json](./japanese-streaming-stt/data/sample_output.json)
 
 ### TTS (Text-to-Speech)
 
