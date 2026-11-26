@@ -1,0 +1,125 @@
+{
+  "description": "Example output event sequence for a Kotoba Japanese STT Streaming session with semantic_vad turn detection and timestamps",
+  "audio_info": {
+    "format": "pcm16",
+    "sample_rate": 24000,
+    "channels": 1,
+    "duration_ms": 2400
+  },
+  "session_config": {
+    "input_audio_format": "pcm16",
+    "input_audio_sample_rate": 24000,
+    "input_audio_number_of_channels": 1,
+    "input_audio_transcription": {
+      "language": "ja",
+      "target_language": "ja",
+      "keywords": ["Kotoba", "音声認識"],
+      "style_preference": {
+        "human_name": "kana",
+        "verbatim": false
+      },
+      "timestamps": true
+    },
+    "turn_detection": {
+      "type": "semantic_vad",
+      "eagerness": "medium"
+    }
+  },
+  "events": [
+    {
+      "type": "transcription_session.created",
+      "event_id": "sess_abc123-tc-1234567890"
+    },
+    {
+      "_comment": "Echo of the applied settings, abridged: the server may add fields not documented here; ignore unknown fields",
+      "type": "transcription_session.updated",
+      "event_id": "sess_abc123-tu-1234567891",
+      "session": {
+        "object": "realtime.transcription_session",
+        "input_audio_format": "pcm16",
+        "input_audio_sample_rate": 24000,
+        "input_audio_number_of_channels": 1,
+        "input_audio_transcription": {
+          "language": "ja",
+          "target_language": "ja",
+          "keywords": ["Kotoba", "音声認識"],
+          "style_preference": {
+            "human_name": "kana",
+            "verbatim": false
+          },
+          "timestamps": true
+        },
+        "turn_detection": {
+          "type": "semantic_vad",
+          "eagerness": "medium"
+        }
+      }
+    },
+    {
+      "type": "conversation.item.created",
+      "event_id": "sess_abc123-cc-1234567892"
+    },
+    {
+      "_comment": "An empty delta before the first turn starts has item_id null. audio_processed_ms trails the audio sent and can stay 0 until committed",
+      "type": "conversation.item.input_audio_transcription.delta",
+      "item_id": null,
+      "delta": "",
+      "audio_processed_ms": 0
+    },
+    {
+      "_comment": "With turn detection, item_id is a server-generated turn ID shared by the turn's deltas and its completed event. With timestamps, start_ms / end_ms give the span of input audio the text was spoken in; empty or whitespace-only deltas carry neither",
+      "type": "conversation.item.input_audio_transcription.delta",
+      "item_id": "6f1d2c3b-4a5e-4f60-8b7a-9c0d1e2f3a4b",
+      "delta": "Kotobaの",
+      "audio_processed_ms": 0,
+      "start_ms": 320,
+      "end_ms": 880
+    },
+    {
+      "type": "conversation.item.input_audio_transcription.delta",
+      "item_id": "6f1d2c3b-4a5e-4f60-8b7a-9c0d1e2f3a4b",
+      "delta": "音声認識です。",
+      "audio_processed_ms": 0,
+      "start_ms": 880,
+      "end_ms": 2000
+    },
+    {
+      "_comment": "With timestamps, the turn's span runs from the start of its first delta to the end of its last",
+      "type": "conversation.item.input_audio_transcription.completed",
+      "event_id": "sess_abc123-co-1234567893",
+      "item_id": "6f1d2c3b-4a5e-4f60-8b7a-9c0d1e2f3a4b",
+      "transcript": "Kotobaの音声認識です。",
+      "start_ms": 320,
+      "end_ms": 2000
+    },
+    {
+      "_comment": "item_id echoes the commit event_id (null when none was sent); audio_processed_ms is the length of the audio sent. The server closes the stream after this event",
+      "type": "input_audio_buffer.committed",
+      "event_id": "sess_abc123-ic-1234567899",
+      "item_id": "commit_0000001",
+      "audio_processed_ms": 2400
+    }
+  ],
+  "full_transcript": "Kotobaの音声認識です。",
+  "without_turn_detection": {
+    "_comment": "With turn_detection false (the default), no completed events are sent and delta item_id echoes the append event_id (null when none was sent). Concatenate the deltas and use input_audio_buffer.committed as the done signal.",
+    "example": {
+      "type": "conversation.item.input_audio_transcription.delta",
+      "item_id": "chunk_0000001",
+      "delta": "Kotobaの",
+      "audio_processed_ms": 0
+    }
+  },
+  "error_example": {
+    "_comment": "invalid_parameters on transcription_session.update keeps the stream open; send a corrected update within 60 s of connecting",
+    "type": "error",
+    "event_id": "sess_abc123-er-1234567894",
+    "item_id": null,
+    "error": {
+      "type": "invalid_request_error",
+      "code": "invalid_parameters",
+      "message": "無効なパラメータです",
+      "param": "session.input_audio_transcription.target_language"
+    }
+  }
+}
