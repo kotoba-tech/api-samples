@@ -54,7 +54,7 @@ Real-time Japanese speech transcription on Amazon SageMaker. You stream audio ov
 > [!IMPORTANT]
 > The endpoint accepts **bidirectional streaming only**. `POST /invocations` and batch transform jobs do not transcribe audio.
 >
-> Send every event as a UTF-8 text payload (`RequestPayloadPart(bytes_=..., data_type="UTF8")`). A payload sent without `data_type="UTF8"` reaches the server as a binary frame, which it cannot read as an event, and the session fails.
+> Send every event as a UTF-8 text payload (`RequestPayloadPart(bytes_=..., data_type="UTF8")`). A payload sent without `data_type="UTF8"` reaches the server as a binary frame, which it cannot read as an event: the server answers it with `invalid_json` and ignores it.
 
 ## Protocol flow
 
@@ -231,18 +231,13 @@ The server reports problems with an `error` event. Most carry an `error` object;
 | --- | --- | --- |
 | `invalid_parameters` | `transcription_session.update` is invalid: unsupported `target_language`, keywords over the limits, an unknown audio format, and similar. `param` names the field when known. | The stream stays open; send a corrected `transcription_session.update` within the init window. |
 | `invalid_parameters` | An `append` or `commit` event does not match its schema (for example an `event_id` over 36 characters). | That event is ignored; the session continues. |
+| `invalid_parameters` (`param`: `audio`) | An `append` carries audio that cannot be decoded: invalid base64, PCM whose length is not a whole number of samples × channels, or a corrupt Ogg/Opus stream. | That chunk is dropped and not billed; the session continues. |
 | `payload_too_large` | One `append` carries more than 8 seconds of audio. | That chunk is dropped and not billed; the session continues. Split audio into smaller chunks. |
-| `invalid_json` | After `transcription_session.updated`, an event is not valid JSON. | That event is ignored; the session continues. |
-| `invalid_event` | After `transcription_session.updated`, an event has no `type`. | That event is ignored; the session continues. |
+| `invalid_json` | An event is not valid JSON, or was sent as a binary payload (without `data_type="UTF8"`). | That event is ignored; the session continues. |
+| `invalid_event` | An event is valid JSON but not an object, or, after `transcription_session.updated`, has no `type`. | That event is ignored; the session continues. |
 | `timeout_error` | `transcription_session.update` was not accepted within 60 seconds of connecting. | The server closes the stream. |
 | `system_busy` | The session could not join the model after it was admitted. | The server closes the stream. Retry with backoff. |
-| `server_error` | An internal error. | The server closes the stream. Start a new session. |
-
-Some failures end the session with an `error` event whose `error` is a plain string instead of an object, then close the stream:
-
-- An `append` carries audio that cannot be decoded: invalid base64, PCM whose length is not a whole number of samples × channels, or a corrupt Ogg/Opus stream.
-- Before `transcription_session.updated`, an event is not valid JSON.
-- Any other unexpected failure.
+| `server_error` | An internal error, for example while transcribing the audio. | The server closes the stream. Start a new session. |
 
 When the endpoint is already serving its maximum number of sessions, the stream does not open: the connection is refused with HTTP 503 before `transcription_session.created`, with error code `system_busy` (at capacity) or `worker_unavailable` (the model is not ready). Retry with backoff, or add instances.
 

@@ -118,7 +118,7 @@
     "error": {
       "type": "invalid_request_error",
       "code": "invalid_parameters",
-      "message": "無効なパラメータです",
+      "message": "Invalid parameters",
       "param": "session.input_audio_transcription.target_language"
     }
   }
