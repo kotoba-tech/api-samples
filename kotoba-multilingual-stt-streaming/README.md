@@ -32,7 +32,7 @@ Real-time speech transcription in eight languages on Amazon SageMaker. You strea
 - Eight languages, one per session.
 - For Japanese: katakana person names (`style_preference.human_name: "kana"`) and clean transcripts with fillers and restarts (えーと, あの) removed (`style_preference.verbatim: false`).
 - Keyword biasing for names, products and jargon: up to 1,000 terms.
-- Turn detection on by default (sentence-aware `semantic_vad`), or silence-based (`server_vad`), or off.
+- Optional turn detection: sentence-aware (`semantic_vad`, recommended) or silence-based (`server_vad`).
 - Accepts `pcm16`, `float32`, `mulaw` / `twilio` and Ogg/Opus input at any sample rate.
 
 Not available in this version: timestamps and speaker diarization.
@@ -94,7 +94,7 @@ The `session` object of `transcription_session.update`:
 | `input_audio_transcription.style_preference.human_name` | `"default"` \| `"kana"` | `"default"` | `"kana"` writes Japanese person names in katakana. |
 | `input_audio_transcription.style_preference.verbatim` | boolean | `true` | `true` keeps fillers and restarts (えーと, あの) as spoken. `false` removes them; **Japanese only**: with any other `target_language`, `false` is rejected. |
 | `input_audio_transcription.timestamps` | boolean | `false` | Not available: `true` is rejected with `invalid_parameters`. |
-| `turn_detection` | `false` \| object | semantic VAD, `eagerness` `"medium"` | Turn detection. See [Turn detection](#turn-detection). |
+| `turn_detection` | `false` \| object | `false` | Turn detection. See [Turn detection](#turn-detection). |
 | `diarization` | boolean | `false` | Not available: `true` is rejected with `invalid_parameters`. |
 
 Example:
@@ -117,7 +117,7 @@ Example:
 }
 ```
 
-`transcription_session.updated` echoes the settings the server applied, including the default `turn_detection`.
+`transcription_session.updated` echoes the settings the server applied.
 
 `yue` is written in Traditional characters in most sessions, but some sessions come back in Simplified characters.
 
@@ -139,7 +139,7 @@ Example:
 | `transcription_session.updated` | `event_id`, `session` | The settings were accepted. Start sending audio. |
 | `conversation.item.created` | `event_id` | Sent once. Informational. |
 | `conversation.item.input_audio_transcription.delta` | `item_id`, `delta`, `audio_processed_ms` | A piece of the transcript. |
-| `conversation.item.input_audio_transcription.completed` | `event_id`, `item_id`, `transcript` | The full transcript of one detected turn. Only with turn detection on (the default). |
+| `conversation.item.input_audio_transcription.completed` | `event_id`, `item_id`, `transcript` | The full transcript of one detected turn. Only with turn detection on. |
 | `input_audio_buffer.committed` | `event_id`, `item_id`, `audio_processed_ms` | All audio is transcribed. The server closes the stream after this event. |
 | `error` | `event_id`, `error` | See [Errors](#errors). |
 
@@ -156,8 +156,7 @@ To build the transcript:
 
 | Value | Behavior |
 | --- | --- |
-| omitted (default) | Same as `{"type": "semantic_vad", "eagerness": "medium"}`. |
-| `false` | No turns and no `completed` events. |
+| `false` (default) | No turns and no `completed` events. |
 | `{"type": "semantic_vad", "eagerness": "medium"}` (recommended) | A turn ends soon after the speaker finishes a sentence, and waits longer through pauses inside a sentence. `eagerness` is `"low"`, `"medium"`, `"high"` or `"auto"` (same as `"medium"`). |
 | `{"type": "server_vad", "silence_duration_ms": 800}` | A turn ends after `silence_duration_ms` of model output without text (default `800`). |
 
