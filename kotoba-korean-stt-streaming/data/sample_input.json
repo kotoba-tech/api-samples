@@ -81,8 +81,7 @@
     "recommended_sample_rate": 24000,
     "max_keywords": 1000,
     "max_keyword_characters": 64,
-    "session_update_window_seconds": 60,
-    "aws_bidirectional_stream_max_minutes": 30
+    "session_update_window_seconds": 60
   },
   "turn_detection_options": {
     "_comment": "session.turn_detection accepts false, a semantic VAD object (recommended) or a server VAD object",
