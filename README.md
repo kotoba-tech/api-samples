@@ -9,6 +9,7 @@ This repository contains sample notebooks and data files for Kotoba ML products 
 | [STT (Speech-to-Text)](./stt/)                                                      | Real-time speech transcription via bidirectional streaming                    | Available |
 | [Japanese STT (Speech-to-Text)](./japanese-streaming-stt/)                          | Real-time Japanese speech transcription, billed per hour of audio             | Limited   |
 | [TTS (Text-to-Speech)](./tts/)                                                      | Real-time speech synthesis via bidirectional streaming                        | Available |
+| [Japanese TTS (Text-to-Speech)](./japanese-streaming-tts/)                          | Real-time Japanese speech synthesis, billed per million bytes of text         | Limited   |
 | [Multilingual Speech-to-Text (STT) Streaming](./kotoba-multilingual-stt-streaming/) | Real-time speech transcription in eight languages via bidirectional streaming | Limited   |
 | [Korean Speech-to-Text (STT) Streaming](./kotoba-korean-stt-streaming/)             | Real-time Korean speech transcription via bidirectional streaming             | Limited   |
 
@@ -39,6 +40,12 @@ All Kotoba products use **SageMaker bidirectional streaming only**:
 - **Sample Notebook**: [kotoba-tts-streaming.ipynb](./tts/kotoba-tts-streaming.ipynb)
 - **Input Event Sample**: [sample_input.json](./tts/data/sample_input.json)
 - **Output Event Sample**: [sample_output.json](./tts/data/sample_output.json)
+
+### Japanese TTS (Text-to-Speech)
+
+- **Sample Notebook**: [kotoba-japanese-streaming-tts.ipynb](./japanese-streaming-tts/kotoba-japanese-streaming-tts.ipynb)
+- **Input Event Sample**: [sample_input.json](./japanese-streaming-tts/data/sample_input.json)
+- **Output Event Sample**: [sample_output.json](./japanese-streaming-tts/data/sample_output.json)
 
 ### Multilingual Speech-to-Text (STT) Streaming
 
