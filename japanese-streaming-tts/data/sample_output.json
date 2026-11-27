@@ -1,0 +1,194 @@
+{
+  "description": "Expected output event sequence for Kotoba Japanese TTS Streaming (promptless, one-shot) with timestamps enabled when synthesizing 'こんにちは、世界。今日もよろしくお願いします。' with response_id='resp_001'",
+  "session_config": {
+    "language": "ja",
+    "speaker_id": "male-01"
+  },
+  "output_audio": {
+    "format": "float32",
+    "sample_rate": 24000,
+    "channels": 1,
+    "encoding": "little-endian"
+  },
+  "events": [
+    {
+      "_comment": "Sent by the server in response to the client's open event (after language and speaker_id are validated). `voice_settings` echoes the session defaults (from open, or speed 1.0 / pitch 0 / volume 1.0). `client_id` is the server-assigned session identifier.",
+      "type": "session.created",
+      "format": "float32",
+      "sample_rate": 24000,
+      "channels": 1,
+      "language": "ja",
+      "speaker_id": "male-01",
+      "voice_settings": {
+        "speed": 1.0,
+        "pitch": 0.0,
+        "volume": 1.0
+      },
+      "client_id": "sess_abc123"
+    },
+    {
+      "_comment": "Emitted in response to response.create. `response.id` is the id supplied by the client, or a server-generated UUID if it was omitted. The same id appears on every subsequent audio.chunk and on response.done.",
+      "type": "response.created",
+      "response": {
+        "id": "resp_001"
+      }
+    },
+    {
+      "_comment": "Early streaming audio delta. `audio` is base64-encoded float32 (little-endian). `response_id` lets the client correlate chunks back to the originating response.create. No timestamp record has been finalized yet, so this chunk omits `alignments` entirely.",
+      "type": "audio.chunk",
+      "response_id": "resp_001",
+      "audio": "BASE64_ENCODED_FLOAT32_AUDIO_BYTES",
+      "isFinal": false
+    },
+    {
+      "_comment": "Newly finalized records appear exactly once in `alignments`. Their text concatenates to a prefix of the raw request text.",
+      "type": "audio.chunk",
+      "response_id": "resp_001",
+      "audio": "BASE64_ENCODED_FLOAT32_AUDIO_BYTES",
+      "isFinal": false,
+      "alignments": [
+        {"start": 0.00, "end": 0.25, "text": "こん"},
+        {"start": 0.25, "end": 0.50, "text": "にち"}
+      ]
+    },
+    {
+      "type": "audio.chunk",
+      "response_id": "resp_001",
+      "audio": "BASE64_ENCODED_FLOAT32_AUDIO_BYTES",
+      "isFinal": false,
+      "alignments": [
+        {"start": 0.50, "end": 0.65, "text": "は"},
+        {"start": 0.65, "end": 0.75, "text": "、"},
+        {"start": 0.75, "end": 1.10, "text": "世界"},
+        {"start": 1.10, "end": 1.18, "text": "。"}
+      ]
+    },
+    {
+      "type": "audio.chunk",
+      "response_id": "resp_001",
+      "audio": "BASE64_ENCODED_FLOAT32_AUDIO_BYTES",
+      "isFinal": false,
+      "alignments": [
+        {"start": 1.18, "end": 1.45, "text": "今日"},
+        {"start": 1.45, "end": 1.58, "text": "も"},
+        {"start": 1.58, "end": 1.85, "text": "よろ"},
+        {"start": 1.85, "end": 2.08, "text": "しく"}
+      ]
+    },
+    {
+      "_comment": "The final chunk carries the last newly finalized records in `alignments`; the records received across all chunks concatenate to the full request text.",
+      "type": "audio.chunk",
+      "response_id": "resp_001",
+      "audio": "BASE64_ENCODED_FLOAT32_AUDIO_BYTES",
+      "isFinal": true,
+      "alignments": [
+        {"start": 2.08, "end": 2.35, "text": "お願"},
+        {"start": 2.35, "end": 2.60, "text": "いし"},
+        {"start": 2.60, "end": 2.90, "text": "ます"},
+        {"start": 2.90, "end": 3.00, "text": "。"}
+      ]
+    },
+    {
+      "_comment": "End of this synthesis turn. The session stays open; a new response.create may follow.",
+      "type": "response.done",
+      "response": {
+        "id": "resp_001",
+        "status": "completed",
+        "usage": {
+          "input_tokens": 18,
+          "output_tokens": 48,
+          "total_tokens": 66
+        }
+      }
+    }
+  ],
+  "alt_terminal_events": {
+    "cancelled": {
+      "_comment": "`usage` reflects tokens consumed before cancellation (partial); omitted entirely if nothing was consumed.",
+      "type": "response.done",
+      "response": {
+        "id": "resp_001",
+        "status": "cancelled",
+        "usage": {
+          "input_tokens": 18,
+          "output_tokens": 20,
+          "total_tokens": 38
+        }
+      }
+    },
+    "failed_unknown_speaker": {
+      "_comment": "No `usage`: this failure occurs before any audio is produced, so nothing was consumed. A failure mid-synthesis carries partial `usage`.",
+      "type": "response.done",
+      "response": {
+        "id": "resp_001",
+        "status": "failed",
+        "error": {
+          "code": "unknown_speaker_id",
+          "message": "unknown speaker_id: does-not-exist"
+        }
+      }
+    },
+    "worker_timeout": {
+      "_comment": "Non-fatal notification that the server did not produce audio within WS_RESULT_TIMEOUT. The session stays open and synthesis may be retried. After WS_RESULT_TIMEOUT_LIMIT (default 3) consecutive timeouts the server emits a fatal `error` and closes the connection. The `message` field is the literal string the server sends.",
+      "type": "timeout",
+      "message": "worker result timeout",
+      "response_id": "resp_001"
+    },
+    "invalid_voice_settings": {
+      "_comment": "Non-fatal, response-scoped rejection of a response.create whose voice_settings has a field out of range or not a number; `message` names the field. No response.created or response.done follows for this id; the session stays open.",
+      "type": "error",
+      "code": "invalid_request",
+      "message": "voice_settings.pitch must be between -4.0 and 4.0",
+      "fatal": false,
+      "response_id": "resp_001"
+    },
+    "timestamps_text_too_long": {
+      "_comment": "Non-fatal, response-scoped rejection of a response.create with with_timestamps: true whose text is longer than 400 characters. No response.created or response.done follows for this id; the session stays open.",
+      "type": "error",
+      "code": "invalid_request",
+      "message": "with_timestamps supports text up to 400 characters",
+      "fatal": false,
+      "response_id": "resp_001"
+    },
+    "text_too_long": {
+      "_comment": "The text is past the model's input limit (about 1,600 tokens). It is refused after response.created with no audio and is not billed; the session stays open. Split the text across several response.create events.",
+      "type": "response.done",
+      "response": {
+        "id": "resp_001",
+        "status": "failed",
+        "error": {
+          "code": "invalid_request",
+          "message": "Input text produced 1700 tokens; maximum is 1598"
+        }
+      }
+    },
+    "over_capacity": {
+      "_comment": "The response started while the instance was already synthesizing its maximum number of responses (32 on L4, 64 on L40S). It is refused after response.created with no audio and is not billed; the session stays open. Retry with backoff or add instances.",
+      "type": "response.done",
+      "response": {
+        "id": "resp_001",
+        "status": "failed",
+        "error": {
+          "code": "over_max_concurrency",
+          "message": "over_max_concurrency"
+        }
+      }
+    },
+    "length_limited": {
+      "_comment": "The response reached the model's output length limit (about two minutes of audio). It still ends as completed; the audio already sent is kept, and the response is billed in full.",
+      "type": "response.done",
+      "response": {
+        "id": "resp_001",
+        "status": "completed",
+        "finish_reason": "length"
+      }
+    },
+    "fatal_error": {
+      "_comment": "Fatal, session-scoped: the server closes the connection after it.",
+      "type": "error",
+      "message": "unsupported_language",
+      "fatal": true,
+      "response_id": null
+    }
+  }
+}
