@@ -1,0 +1,104 @@
+{
+  "description": "Input event sequence for Kotoba Multilingual Speech-to-Text (STT) Streaming (kotoba-multilingual-stt-streaming v1.0), SageMaker bidirectional streaming",
+  "protocol": "SageMaker Bidirectional Streaming (HTTP/2)",
+  "endpoint_path": "/invocations-bidirectional-stream",
+  "events": [
+    {
+      "_comment": "Step 1: Configure session after receiving transcription_session.created (within 60 s of connecting)",
+      "type": "transcription_session.update",
+      "session": {
+        "input_audio_format": "pcm16",
+        "input_audio_sample_rate": 24000,
+        "input_audio_number_of_channels": 1,
+        "input_audio_transcription": {
+          "language": "ja",
+          "target_language": "ja",
+          "keywords": [
+            "Kotoba",
+            "音声認識"
+          ],
+          "style_preference": {
+            "human_name": "default",
+            "verbatim": false
+          }
+        },
+        "turn_detection": {
+          "type": "semantic_vad",
+          "eagerness": "medium"
+        }
+      }
+    },
+    {
+      "_comment": "Step 2: Send audio chunks (80ms recommended, max 8 seconds per event). event_id: up to 36 characters of A-Z a-z 0-9 _ -",
+      "event_id": "chunk_0000001",
+      "type": "input_audio_buffer.append",
+      "audio": "BASE64_ENCODED_PCM16_AUDIO_BYTES"
+    },
+    {
+      "_comment": "Step 2 (continued): Send more audio chunks",
+      "event_id": "chunk_0000002",
+      "type": "input_audio_buffer.append",
+      "audio": "BASE64_ENCODED_PCM16_AUDIO_BYTES"
+    },
+    {
+      "_comment": "Step 3: Signal end of audio stream. event_id is optional and is returned as item_id on input_audio_buffer.committed",
+      "type": "input_audio_buffer.commit",
+      "event_id": "commit_0000001"
+    }
+  ],
+  "audio_format_specs": {
+    "pcm16": {
+      "description": "16-bit signed integer PCM",
+      "encoding": "little-endian",
+      "sample_rate": 24000,
+      "channels": 1,
+      "bytes_per_sample": 2
+    },
+    "float32": {
+      "description": "32-bit floating point",
+      "encoding": "little-endian",
+      "sample_rate": 24000,
+      "channels": 1,
+      "bytes_per_sample": 4,
+      "range": [
+        -1.0,
+        1.0
+      ]
+    },
+    "mulaw": {
+      "description": "G.711 μ-law (alias: twilio)",
+      "encoding": "G.711 μ-law",
+      "sample_rate": 8000,
+      "channels": 1,
+      "bytes_per_sample": 1
+    },
+    "opus": {
+      "description": "Self-contained Ogg/Opus blob per append event, decoded at 48 kHz",
+      "encoding": "Ogg/Opus",
+      "channels": 1
+    },
+    "_notes": "Any positive input_audio_sample_rate is accepted for pcm16 and float32 and resampled server-side; 24000 is recommended. PCM input with more than one channel is downmixed to mono."
+  },
+  "limits": {
+    "max_audio_per_event_seconds": 8,
+    "recommended_chunk_ms": 80,
+    "recommended_sample_rate": 24000,
+    "max_keywords": 1000,
+    "max_keyword_characters": 64,
+    "session_update_window_seconds": 60,
+    "aws_bidirectional_stream_max_minutes": 30
+  },
+  "turn_detection_options": {
+    "_comment": "session.turn_detection accepts false, a semantic VAD object (recommended) or a server VAD object",
+    "disabled": false,
+    "semantic_vad": {
+      "type": "semantic_vad",
+      "eagerness": "auto"
+    },
+    "server_vad": {
+      "type": "server_vad",
+      "silence_duration_ms": 800
+    },
+    "_notes": "With false there is no automatic turn detection — concatenate delta events and use input_audio_buffer.committed as the done signal. With a VAD object the server emits a conversation.item.input_audio_transcription.completed event at each detected turn boundary. semantic_vad (recommended): eagerness low, medium, high or auto (= medium); a turn ends sooner after a finished sentence. server_vad: silence_duration_ms (default 800) is the time without text output that ends a turn. Semantic VAD ends a turn soon after a sentence is complete and waits longer while it is not; server VAD ends a turn after every pause of silence_duration_ms, which can split a phone number or an address that is read with pauses. For dictated numbers and addresses, use semantic VAD or a longer silence_duration_ms. Tune for your application and downstream pipeline."
+  }
+}

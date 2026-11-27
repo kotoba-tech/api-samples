@@ -1,0 +1,109 @@
+{
+  "description": "Illustrative output event sequence for sample_input.json (semantic VAD on). Text, ids and times are examples.",
+  "audio_info": {
+    "file": "sample_input.wav",
+    "format": "pcm16",
+    "sample_rate": 24000,
+    "channels": 1
+  },
+  "events": [
+    {
+      "type": "transcription_session.created",
+      "event_id": "sess_abc123-tc-1234567890"
+    },
+    {
+      "_comment": "The applied settings. Fields the client omitted show the product's defaults.",
+      "type": "transcription_session.updated",
+      "event_id": "sess_abc123-tu-1234567891",
+      "session": {
+        "object": "realtime.transcription_session",
+        "input_audio_format": "pcm16",
+        "input_audio_sample_rate": 24000,
+        "input_audio_number_of_channels": 1,
+        "input_audio_transcription": {
+          "language": "ja",
+          "target_language": "ja",
+          "keywords": [
+            "Kotoba",
+            "音声認識"
+          ],
+          "style_preference": {
+            "human_name": "default",
+            "verbatim": false
+          },
+          "timestamps": false
+        },
+        "turn_detection": {
+          "type": "semantic_vad",
+          "eagerness": "medium"
+        },
+        "delay": 10,
+        "diarization": false
+      }
+    },
+    {
+      "type": "conversation.item.created",
+      "event_id": "sess_abc123-cc-1234567892"
+    },
+    {
+      "_comment": "Empty deltas before the first text of a turn have item_id null.",
+      "type": "conversation.item.input_audio_transcription.delta",
+      "item_id": null,
+      "delta": "",
+      "audio_processed_ms": 0
+    },
+    {
+      "_comment": "With turn detection on, item_id is the turn's server-generated id; with it off, item_id echoes the append event_id.",
+      "type": "conversation.item.input_audio_transcription.delta",
+      "item_id": "6f1c2a7e-0b4d-4c5e-9a3f-2d8b7e6c5a41",
+      "delta": "こんにちは",
+      "audio_processed_ms": 0
+    },
+    {
+      "type": "conversation.item.input_audio_transcription.delta",
+      "item_id": "6f1c2a7e-0b4d-4c5e-9a3f-2d8b7e6c5a41",
+      "delta": "。",
+      "audio_processed_ms": 0
+    },
+    {
+      "_comment": "One per detected turn (only when turn_detection is a VAD object).",
+      "type": "conversation.item.input_audio_transcription.completed",
+      "event_id": "sess_abc123-ct-1234567898",
+      "item_id": "6f1c2a7e-0b4d-4c5e-9a3f-2d8b7e6c5a41",
+      "transcript": "こんにちは。"
+    },
+    {
+      "_comment": "item_id is the event_id sent on input_audio_buffer.commit (null when none was sent). audio_processed_ms is the length of the processed audio. The server closes the stream after this event.",
+      "type": "input_audio_buffer.committed",
+      "event_id": "sess_abc123-ic-1234567899",
+      "item_id": "commit_0000001",
+      "audio_processed_ms": 1440
+    }
+  ],
+  "full_transcript": "こんにちは。",
+  "error_examples": {
+    "invalid_parameters": {
+      "_comment": "A rejected transcription_session.update. The session stays open; send a corrected update within 60 s of connecting.",
+      "type": "error",
+      "event_id": "sess_abc123-er-1234567893",
+      "error": {
+        "type": "invalid_request_error",
+        "code": "invalid_parameters",
+        "message": "Invalid parameters",
+        "param": "session.diarization"
+      }
+    },
+    "timestamps_unavailable": {
+      "_comment": "timestamps: true is not available on this product.",
+      "type": "error",
+      "event_id": "sess_abc123-er-1234567894",
+      "error": {
+        "type": "invalid_request_error",
+        "code": "invalid_parameters",
+        "message": "timestamps are not available for this model at the applied delay. Retry without timestamps.",
+        "param": "session.input_audio_transcription.timestamps"
+      }
+    }
+  },
+  "_notes": "Concatenate the delta fields in order to form the full transcript. On this product audio_processed_ms stays 0 on deltas; input_audio_buffer.committed carries the length of the processed audio."
+}

@@ -4,11 +4,13 @@ This repository contains sample notebooks and data files for Kotoba ML products 
 
 ## Products
 
-| Product                                                                     | Description                                                         | Status    |
-| --------------------------------------------------------------------------- | ------------------------------------------------------------------- | --------- |
-| [STT (Speech-to-Text)](./stt/)                                              | Real-time speech transcription via bidirectional streaming          | Available |
-| [Japanese STT (Speech-to-Text)](./japanese-streaming-stt/)                  | Real-time Japanese speech transcription, billed per hour of audio   | Limited   |
-| [TTS (Text-to-Speech)](./tts/)                                              | Real-time speech synthesis via bidirectional streaming              | Available |
+| Product                                                                             | Description                                                                   | Status    |
+| ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | --------- |
+| [STT (Speech-to-Text)](./stt/)                                                      | Real-time speech transcription via bidirectional streaming                    | Available |
+| [Japanese STT (Speech-to-Text)](./japanese-streaming-stt/)                          | Real-time Japanese speech transcription, billed per hour of audio             | Limited   |
+| [TTS (Text-to-Speech)](./tts/)                                                      | Real-time speech synthesis via bidirectional streaming                        | Available |
+| [Multilingual Speech-to-Text (STT) Streaming](./kotoba-multilingual-stt-streaming/) | Real-time speech transcription in eight languages via bidirectional streaming | Limited   |
+| [Korean Speech-to-Text (STT) Streaming](./kotoba-korean-stt-streaming/)             | Real-time Korean speech transcription via bidirectional streaming             | Limited   |
 
 ## Important Notice
 
@@ -37,6 +39,20 @@ All Kotoba products use **SageMaker bidirectional streaming only**:
 - **Sample Notebook**: [kotoba-tts-streaming.ipynb](./tts/kotoba-tts-streaming.ipynb)
 - **Input Event Sample**: [sample_input.json](./tts/data/sample_input.json)
 - **Output Event Sample**: [sample_output.json](./tts/data/sample_output.json)
+
+### Multilingual Speech-to-Text (STT) Streaming
+
+- **Protocol Reference**: [README.md](./kotoba-multilingual-stt-streaming/README.md)
+- **Sample Notebook**: [kotoba-multilingual-stt-streaming.ipynb](./kotoba-multilingual-stt-streaming/kotoba-multilingual-stt-streaming.ipynb)
+- **Input Event Sample**: [sample_input.json](./kotoba-multilingual-stt-streaming/data/sample_input.json)
+- **Output Event Sample**: [sample_output.json](./kotoba-multilingual-stt-streaming/data/sample_output.json)
+
+### Korean Speech-to-Text (STT) Streaming
+
+- **Protocol Reference**: [README.md](./kotoba-korean-stt-streaming/README.md)
+- **Sample Notebook**: [kotoba-korean-stt-streaming.ipynb](./kotoba-korean-stt-streaming/kotoba-korean-stt-streaming.ipynb)
+- **Input Event Sample**: [sample_input.json](./kotoba-korean-stt-streaming/data/sample_input.json)
+- **Output Event Sample**: [sample_output.json](./kotoba-korean-stt-streaming/data/sample_output.json)
 
 ## Getting Started
 
